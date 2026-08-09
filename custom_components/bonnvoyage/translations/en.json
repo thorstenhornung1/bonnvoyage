@@ -174,21 +174,37 @@
       "entry_type": "City route",
       "step": {
         "user": {
-          "title": "Watch city route",
-          "description": "The city of Bonn measures live traffic on 111 main road segments. Pick a point on your commute – the closest measured segment is watched with status and speed sensors.",
+          "title": "Watch city route – show location (1/3)",
+          "description": "The city of Bonn measures live traffic on 111 main road segments. Put the marker on the street you care about – the next step shows the measured segments nearby and you pick one explicitly. Tip: the city's own traffic map at https://stadtplan.bonn.de shows which streets are measured. To display street names, only the coordinates of the city's measurement segments are sent to an OpenStreetMap service – never your picked point.",
           "data": {
-            "location": "Point on your route",
-            "name": "Name (optional)"
+            "location": "Point on your route"
           },
           "data_description": {
-            "location": "Move the marker onto the street you care about.",
-            "name": "For example \"Adenauerallee northbound\". Leave empty for an automatic name."
+            "location": "Rough aiming is fine: every measured segment within 2 km is offered for selection."
+          }
+        },
+        "select": {
+          "title": "Pick a segment (2/3)",
+          "description": "These measured segments are close to your point, sorted by distance. Direction = driving direction of the segment (compass).{geocoder_note}",
+          "data": {
+            "segment_id": "Segment"
+          }
+        },
+        "name": {
+          "title": "Set a name (3/3)",
+          "description": "Selected: {segment_label}. The device and its sensors (traffic status, speed, congestion) appear under this name.",
+          "data": {
+            "name": "Name"
+          },
+          "data_description": {
+            "name": "Adjust the suggestion if you like, e.g. \"Adenauerallee inbound\"."
           }
         }
       },
       "error": {
-        "no_segment_nearby": "No measured segment within 2 km of the chosen point. The city only measures selected main roads – pick a point closer to a main road.",
-        "already_configured": "The segment closest to this point is already being watched."
+        "no_segment_nearby": "No measured segment within 2 km of the chosen point. The city only measures selected main roads – the city traffic map (link above) shows which.",
+        "already_configured": "This segment is already being watched. Pick another one or reposition the point.",
+        "name_exists": "A city route with this name already exists. Choose a different name."
       },
       "abort": {
         "segments_unavailable": "The city traffic layer is currently unreachable. Please try again later."

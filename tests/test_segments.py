@@ -135,3 +135,25 @@ async def test_watched_segment_recovers(
 
     assert hass.states.get("binary_sensor.nordbrucke_congestion").state == "off"
     assert hass.states.get("sensor.nordbrucke_traffic_status").state == "normal"
+
+
+async def test_geocode_edge_cases() -> None:
+    """Non-dict responses and missing road names return None."""
+    import aiohttp
+    from aioresponses import aioresponses
+
+    from custom_components.bonnvoyage.api.geocode import (
+        NOMINATIM_URL,
+        NominatimClient,
+    )
+
+    with aioresponses() as mock:
+        url = f"{NOMINATIM_URL}?format=jsonv2&lat=50.70000&lon=7.00000&zoom=16"
+        mock.get(url, body=b"[1, 2]")
+        mock.get(url, body=b'{"name": null, "address": {}}')
+        mock.get(url, body=b'{"name": "Fallback-Name", "address": {}}')
+        async with aiohttp.ClientSession() as session:
+            client = NominatimClient(session)
+            assert await client.async_reverse_street(50.7, 7.0) is None
+            assert await client.async_reverse_street(50.7, 7.0) is None
+            assert await client.async_reverse_street(50.7, 7.0) == "Fallback-Name"

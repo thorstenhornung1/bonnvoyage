@@ -668,8 +668,12 @@ async def test_route_wizard_name_exists_and_not_found(
     assert result["errors"] == {"base": "route_not_found"}
 
 
-async def test_segment_subentry_flow(hass: HomeAssistant) -> None:
-    """Picking a point watches the closest measured segment."""
+async def test_segment_subentry_flow(hass: HomeAssistant, aioclient_mock) -> None:
+    """Point -> named candidates -> explicit pick -> prefilled name."""
+    aioclient_mock.get(
+        "https://nominatim.openstreetmap.org/reverse",
+        json={"name": "Bornheimer Straße", "address": {"road": "Bornheimer Straße"}},
+    )
     entry = mock_config_entry()
     entry.add_to_hass(hass)
 
@@ -677,24 +681,46 @@ async def test_segment_subentry_flow(hass: HomeAssistant) -> None:
         (entry.entry_id, SUBENTRY_TYPE_SEGMENT), context={"source": "user"}
     )
     assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "user"
 
     # Point on segment 100's midpoint
     result = await hass.config_entries.subentries.async_configure(
         result["flow_id"],
-        {
-            CONF_LOCATION: {"latitude": 50.7443, "longitude": 7.0907},
-            CONF_NAME: "Nordbrücke",
-        },
+        {CONF_LOCATION: {"latitude": 50.7443, "longitude": 7.0907}},
+    )
+    assert result["step_id"] == "select"
+    options = result["data_schema"].schema["segment_id"].config["options"]
+    # Candidates are named, carry direction, distance and length anchors
+    assert options[0]["value"] == "100"
+    assert "Bornheimer Straße" in options[0]["label"]
+    assert "Richtung" in options[0]["label"]
+    assert "m entfernt" in options[0]["label"]
+    # Escape hatch is always the last option
+    assert options[-1]["value"] == "__repick__"
+
+    result = await hass.config_entries.subentries.async_configure(
+        result["flow_id"], {CONF_SEGMENT_ID: "100"}
+    )
+    assert result["step_id"] == "name"
+    defaults = result["data_schema"]({})
+    assert defaults["name"].startswith("Bornheimer Straße (")
+
+    result = await hass.config_entries.subentries.async_configure(
+        result["flow_id"], {"name": "Nordbrücke stadteinwärts"}
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
     subentry = next(iter(entry.subentries.values()))
-    assert subentry.data[CONF_SEGMENT_ID] == "100"
-    assert subentry.title == "Nordbrücke"
+    assert subentry.title == "Nordbrücke stadteinwärts"
     assert subentry.unique_id == "100"
+    assert subentry.data[CONF_SEGMENT_ID] == "100"
+    assert subentry.data["street_name"] == "Bornheimer Straße"
+    assert subentry.data["direction"] in ("N", "NO", "O", "SO", "S", "SW", "W", "NW")
 
 
 async def test_segment_subentry_errors(hass: HomeAssistant, aioclient_mock) -> None:
-    """Far-away points and duplicates surface as form errors."""
+    """Far points, repick, duplicates and geocoder outages are handled."""
+    # Geocoder down: candidates fall back to "Abschnitt #"
+    aioclient_mock.get("https://nominatim.openstreetmap.org/reverse", status=503)
     entry = mock_config_entry(
         subentries_data=[
             config_entries.ConfigSubentryData(
@@ -714,15 +740,34 @@ async def test_segment_subentry_errors(hass: HomeAssistant, aioclient_mock) -> N
     # No segment within 2 km of a far corner
     result = await hass.config_entries.subentries.async_configure(
         result["flow_id"],
-        {CONF_LOCATION: {"latitude": 50.84, "longitude": 7.29}, CONF_NAME: ""},
+        {CONF_LOCATION: {"latitude": 50.84, "longitude": 7.29}},
     )
-    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "user"
     assert result["errors"] == {"base": "no_segment_nearby"}
 
-    # Closest segment already watched
+    # Valid point: fallback labels, watched marker on the configured segment
     result = await hass.config_entries.subentries.async_configure(
         result["flow_id"],
-        {CONF_LOCATION: {"latitude": 50.7443, "longitude": 7.0907}, CONF_NAME: ""},
+        {CONF_LOCATION: {"latitude": 50.7443, "longitude": 7.0907}},
+    )
+    assert result["step_id"] == "select"
+    options = result["data_schema"].schema["segment_id"].config["options"]
+    assert options[0]["label"].startswith("Abschnitt #100")
+    assert "wird bereits beobachtet" in options[0]["label"]
+
+    # Escape hatch returns to the map with the last point preserved
+    result = await hass.config_entries.subentries.async_configure(
+        result["flow_id"], {CONF_SEGMENT_ID: "__repick__"}
+    )
+    assert result["step_id"] == "user"
+    result = await hass.config_entries.subentries.async_configure(
+        result["flow_id"],
+        {CONF_LOCATION: {"latitude": 50.7443, "longitude": 7.0907}},
+    )
+
+    # Picking the watched segment is a field error, not a dead end
+    result = await hass.config_entries.subentries.async_configure(
+        result["flow_id"], {CONF_SEGMENT_ID: "100"}
     )
     assert result["errors"] == {"base": "already_configured"}
 
@@ -836,3 +881,55 @@ async def test_route_probe_error_paths(hass: HomeAssistant, aioclient_mock) -> N
         )
         assert result["type"] is FlowResultType.FORM
         assert result["errors"] == {"base": error}
+
+
+async def test_segment_geocoder_timeout_and_rename(
+    hass: HomeAssistant, aioclient_mock, monkeypatch
+) -> None:
+    """A geocoder timeout falls back to segment labels; names must be unique."""
+    from custom_components.bonnvoyage.api.geocode import NominatimClient
+
+    async def _hang(self, latitude, longitude):
+        raise TimeoutError
+
+    monkeypatch.setattr(NominatimClient, "async_reverse_street", _hang)
+
+    entry = mock_config_entry(
+        subentries_data=[
+            config_entries.ConfigSubentryData(
+                data={CONF_SEGMENT_ID: "999"},
+                subentry_type=SUBENTRY_TYPE_SEGMENT,
+                title="Bestand",
+                unique_id="999",
+            )
+        ],
+    )
+    entry.add_to_hass(hass)
+
+    result = await hass.config_entries.subentries.async_init(
+        (entry.entry_id, SUBENTRY_TYPE_SEGMENT), context={"source": "user"}
+    )
+    result = await hass.config_entries.subentries.async_configure(
+        result["flow_id"],
+        {CONF_LOCATION: {"latitude": 50.7443, "longitude": 7.0907}},
+    )
+    assert result["step_id"] == "select"
+    options = result["data_schema"].schema[CONF_SEGMENT_ID].config["options"]
+    assert options[0]["label"].startswith("Abschnitt #")
+
+    result = await hass.config_entries.subentries.async_configure(
+        result["flow_id"], {CONF_SEGMENT_ID: options[0]["value"]}
+    )
+    assert result["step_id"] == "name"
+    defaults = result["data_schema"]({})
+    assert defaults["name"].startswith("Abschnitt #")
+
+    # Duplicate name is rejected, then a unique one succeeds
+    result = await hass.config_entries.subentries.async_configure(
+        result["flow_id"], {"name": "Bestand"}
+    )
+    assert result["errors"] == {"base": "name_exists"}
+    result = await hass.config_entries.subentries.async_configure(
+        result["flow_id"], {"name": "Neue Strecke"}
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY

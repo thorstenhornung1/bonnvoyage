@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Mapping
+from dataclasses import dataclass
 import logging
 from typing import Any
 
@@ -44,6 +46,7 @@ from .api.exceptions import (
     ApiRouteNotFoundError,
     BonnVoyageApiError,
 )
+from .api.geocode import NominatimClient
 from .api.models import (
     ParkingFacility,
     RoutePoint,
@@ -60,6 +63,7 @@ from .const import (
     CONF_DELAY_ALERT_THRESHOLD,
     CONF_DELAY_THRESHOLD,
     CONF_DESTINATION,
+    CONF_DIRECTION,
     CONF_FACILITY_ID,
     CONF_LOCATION,
     CONF_NAME,
@@ -69,6 +73,7 @@ from .const import (
     CONF_SEGMENT_ID,
     CONF_START,
     CONF_STOP_ID,
+    CONF_STREET_NAME,
     CONF_VIA,
     DEFAULT_DELAY_ALERT_MIN,
     DEFAULT_DELAY_THRESHOLD_MIN,
@@ -85,8 +90,18 @@ from .const import (
     SUBENTRY_TYPE_SEGMENT,
     SUBENTRY_TYPE_STOP,
 )
+from .segment_names import (
+    SegmentNameCache,
+    point_to_segment_m,
+    segment_direction,
+    segment_length_km,
+)
 
 _LOGGER = logging.getLogger(__name__)
+
+SEGMENT_REPICK = "__repick__"
+SEGMENT_CANDIDATES = 3
+GEOCODE_BUDGET_S = 4
 
 PROVIDER_SCHEMA = vol.Schema(
     {
@@ -763,19 +778,22 @@ class RouteSubentryFlowHandler(ConfigSubentryFlow):
 
 
 class SegmentSubentryFlowHandler(ConfigSubentryFlow):
-    """Watch the city traffic segment closest to a picked point."""
+    """Watch a city traffic segment: point -> named candidates -> name."""
 
     def __init__(self) -> None:
         """Initialize the subentry flow."""
         super().__init__()
         self._segments: dict[str, TrafficSegment] = {}
+        self._candidates: list[SegmentCandidate] = []
+        self._picked: SegmentCandidate | None = None
+        self._last_point: dict[str, float] | None = None
+        self._geocoder_failed = False
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> SubentryFlowResult:
-        """Pick a point; the closest segment is watched."""
+        """Step 1: pick a point near the street of interest."""
         errors: dict[str, str] = {}
-        entry = self._get_entry()
 
         if not self._segments:
             client = BonnTrafficClient(async_get_clientsession(self.hass))
@@ -785,54 +803,221 @@ class SegmentSubentryFlowHandler(ConfigSubentryFlow):
                 return self.async_abort(reason="segments_unavailable")
 
         if user_input is not None:
-            location = user_input[CONF_LOCATION]
-            segment, meters = _closest_segment(
-                self._segments, location["latitude"], location["longitude"]
+            self._last_point = user_input[CONF_LOCATION]
+            nearest = _nearest_segments(
+                self._segments,
+                self._last_point["latitude"],
+                self._last_point["longitude"],
             )
-            if segment is None or meters > MAX_SEGMENT_PICK_DISTANCE_M:
+            if not nearest:
                 errors["base"] = "no_segment_nearby"
-            elif any(
-                subentry.unique_id == segment.segment_id
-                for subentry in entry.subentries.values()
-                if subentry.subentry_type == SUBENTRY_TYPE_SEGMENT
-            ):
-                errors["base"] = "already_configured"
             else:
-                name = user_input.get(CONF_NAME, "").strip()
-                return self.async_create_entry(
-                    title=name or f"Stadtstrecke {segment.segment_id}",
-                    data={CONF_SEGMENT_ID: segment.segment_id},
-                    unique_id=segment.segment_id,
-                )
+                await self._async_resolve_candidates(nearest)
+                return await self.async_step_select()
 
         schema = vol.Schema(
             {
                 vol.Required(
                     CONF_LOCATION,
-                    default={
+                    default=self._last_point
+                    or {
                         "latitude": self.hass.config.latitude,
                         "longitude": self.hass.config.longitude,
                     },
-                ): LocationSelector(),
-                vol.Optional(CONF_NAME, default=""): str,
+                ): LocationSelector()
             }
         )
         return self.async_show_form(step_id="user", data_schema=schema, errors=errors)
 
+    async def _async_resolve_candidates(
+        self, nearest: list[tuple[TrafficSegment, float]]
+    ) -> None:
+        """Resolve street names (cache first, then Nominatim, 4 s budget).
 
-def _closest_segment(
+        Naming must never block the selection: failures fall back to
+        "Abschnitt #<id>" labels.
+        """
+        cache = SegmentNameCache(self.hass)
+        geocoder = NominatimClient(async_get_clientsession(self.hass))
+        self._geocoder_failed = False
+        candidates: list[SegmentCandidate] = []
+        try:
+            async with asyncio.timeout(GEOCODE_BUDGET_S):
+                for segment, meters in nearest:
+                    street = await cache.async_get(segment.segment_id)
+                    if street is None:
+                        street = await geocoder.async_reverse_street(
+                            segment.midpoint[0], segment.midpoint[1]
+                        )
+                        if street:
+                            await cache.async_set(segment.segment_id, street)
+                        else:
+                            self._geocoder_failed = True
+                    candidates.append(
+                        SegmentCandidate(
+                            segment, meters, street, segment_direction(segment)
+                        )
+                    )
+        except TimeoutError:
+            self._geocoder_failed = True
+            for segment, meters in nearest[len(candidates) :]:
+                candidates.append(
+                    SegmentCandidate(segment, meters, None, segment_direction(segment))
+                )
+        self._candidates = candidates
+
+    async def async_step_select(
+        self, user_input: dict[str, Any] | None = None
+    ) -> SubentryFlowResult:
+        """Step 2: explicitly confirm one of the named candidates."""
+        entry = self._get_entry()
+        errors: dict[str, str] = {}
+        configured = {
+            subentry.unique_id
+            for subentry in entry.subentries.values()
+            if subentry.subentry_type == SUBENTRY_TYPE_SEGMENT
+        }
+
+        if user_input is not None:
+            choice = user_input[CONF_SEGMENT_ID]
+            if choice == SEGMENT_REPICK:
+                return await self.async_step_user()
+            if choice in configured:
+                errors["base"] = "already_configured"
+            else:
+                self._picked = next(
+                    candidate
+                    for candidate in self._candidates
+                    if candidate.segment.segment_id == choice
+                )
+                return await self.async_step_name()
+
+        options = [
+            SelectOptionDict(
+                value=candidate.segment.segment_id,
+                label=candidate.label(
+                    watched=candidate.segment.segment_id in configured
+                ),
+            )
+            for candidate in self._candidates
+        ]
+        options.append(
+            SelectOptionDict(
+                value=SEGMENT_REPICK,
+                label="Keiner davon - Punkt auf der Karte neu setzen",
+            )
+        )
+        return self.async_show_form(
+            step_id="select",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_SEGMENT_ID): SelectSelector(
+                        SelectSelectorConfig(
+                            options=options, mode=SelectSelectorMode.LIST
+                        )
+                    )
+                }
+            ),
+            errors=errors,
+            description_placeholders={
+                "geocoder_note": (
+                    " Hinweis: Straßennamen konnten gerade nicht ermittelt "
+                    "werden - die Auswahl funktioniert trotzdem."
+                    if self._geocoder_failed
+                    else ""
+                )
+            },
+        )
+
+    async def async_step_name(
+        self, user_input: dict[str, Any] | None = None
+    ) -> SubentryFlowResult:
+        """Step 3: name the watched segment (prefilled) and finish."""
+        entry = self._get_entry()
+        errors: dict[str, str] = {}
+        assert self._picked is not None
+        picked = self._picked
+
+        if user_input is not None:
+            name = user_input[CONF_NAME].strip() or picked.default_name()
+            if any(
+                subentry.title == name
+                for subentry in entry.subentries.values()
+                if subentry.subentry_type == SUBENTRY_TYPE_SEGMENT
+            ):
+                errors["base"] = "name_exists"
+            else:
+                return self.async_create_entry(
+                    title=name,
+                    data={
+                        CONF_SEGMENT_ID: picked.segment.segment_id,
+                        CONF_STREET_NAME: picked.street,
+                        CONF_DIRECTION: picked.direction,
+                    },
+                    unique_id=picked.segment.segment_id,
+                )
+
+        schema = vol.Schema(
+            {vol.Required(CONF_NAME, default=picked.default_name()): str}
+        )
+        return self.async_show_form(
+            step_id="name",
+            data_schema=schema,
+            errors=errors,
+            description_placeholders={"segment_label": picked.label(watched=False)},
+        )
+
+
+@dataclass
+class SegmentCandidate:
+    """One selectable segment with resolved metadata."""
+
+    segment: TrafficSegment
+    meters: float
+    street: str | None
+    direction: str
+
+    def default_name(self) -> str:
+        """Prefilled device name."""
+        if self.street:
+            return f"{self.street} ({self.direction})"
+        return f"Abschnitt #{self.segment.segment_id}"
+
+    def label(self, *, watched: bool) -> str:
+        """Selector label with recognition anchors."""
+        name = self.street or f"Abschnitt #{self.segment.segment_id}"
+        parts = [
+            f"{name} (Richtung {self.direction})",
+            f"{self.meters:.0f} m entfernt",
+            f"{segment_length_km(self.segment)} km langer Abschnitt",
+        ]
+        if self.segment.raw_status:
+            status = self.segment.raw_status
+            if self.segment.speed_kmh is not None:
+                status = f"{status} ({self.segment.speed_kmh} km/h)"
+            parts.append(f"aktuell: {status}")
+        label = f"{parts[0]} - " + ", ".join(parts[1:])
+        if watched:
+            label += " - wird bereits beobachtet"
+        return label
+
+
+def _nearest_segments(
     segments: dict[str, TrafficSegment], latitude: float, longitude: float
-) -> tuple[TrafficSegment | None, float]:
-    """Find the segment with the closest support point to the given point."""
-    best: TrafficSegment | None = None
-    best_meters = float("inf")
-    for segment in segments.values():
-        for lat, lon in segment.points:
-            meters = distance(latitude, longitude, lat, lon)
-            if meters is not None and meters < best_meters:
-                best = segment
-                best_meters = meters
-    return best, best_meters
+) -> list[tuple[TrafficSegment, float]]:
+    """Closest segments by point-to-polyline distance, within the pick radius."""
+    ranked = sorted(
+        (
+            (segment, point_to_segment_m(latitude, longitude, segment))
+            for segment in segments.values()
+        ),
+        key=lambda item: item[1],
+    )
+    return [
+        (segment, meters)
+        for segment, meters in ranked[:SEGMENT_CANDIDATES]
+        if meters <= MAX_SEGMENT_PICK_DISTANCE_M
+    ]
 
 
 class StopSubentryFlowHandler(ConfigSubentryFlow):

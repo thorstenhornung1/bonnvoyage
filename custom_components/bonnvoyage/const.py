@@ -174,3 +174,6 @@ STOP_STALE_TOLERANCE: Final = 2
 DEPARTURES_COUNT: Final = 10
 
 DEFAULT_DELAY_ALERT_MIN: Final = 5
+
+CONF_STREET_NAME: Final = "street_name"
+CONF_DIRECTION: Final = "direction"
