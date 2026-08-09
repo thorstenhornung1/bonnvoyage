@@ -155,3 +155,8 @@ DISRUPTED_SEGMENT_STATUSES: Final = (
     SegmentStatus.CONGESTION_RISK,
     SegmentStatus.CONGESTED,
 )
+
+
+# A source that stays broken longer than this raises a repair issue
+# (architecture review: not before 6 hours).
+REPAIR_OUTAGE_AFTER: Final = timedelta(hours=6)

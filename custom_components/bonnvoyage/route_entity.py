@@ -14,6 +14,7 @@ class BonnVoyageRouteEntity(CoordinatorEntity[RouteCoordinator]):
     """Base class for entities of one configured route."""
 
     _attr_has_entity_name = True
+    _attr_attribution = "© TomTom"
 
     def __init__(
         self,
@@ -37,6 +38,10 @@ class BonnVoyageSegmentEntity(CoordinatorEntity[BonnTrafficCoordinator]):
     """Base class for entities of one watched city segment."""
 
     _attr_has_entity_name = True
+    # CC BY attribution wording mandated by the dataset page
+    _attr_attribution = (
+        "Datenquelle: Bundesstadt Bonn, Amt 66, https://opendata.bonn.de"
+    )
 
     def __init__(
         self,

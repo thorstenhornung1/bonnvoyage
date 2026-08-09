@@ -15,6 +15,8 @@ class BonnVoyageParkingEntity(CoordinatorEntity[BcpCoordinator]):
     """Base class for entities belonging to one parking facility device."""
 
     _attr_has_entity_name = True
+    # CC BY-NC 4.0 attribution wording mandated by the dataset page
+    _attr_attribution = "Bonner City Parkraum GmbH"
 
     def __init__(
         self,

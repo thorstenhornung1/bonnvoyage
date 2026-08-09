@@ -14,9 +14,9 @@ rules:
   docs-actions:
     status: exempt
     comment: Integration registers no custom actions.
-  docs-high-level-description: todo
-  docs-installation-instructions: todo
-  docs-removal-instructions: todo
+  docs-high-level-description: done
+  docs-installation-instructions: done
+  docs-removal-instructions: done
   entity-event-setup:
     status: exempt
     comment: Entities subscribe only via the coordinator.
@@ -35,25 +35,31 @@ rules:
   action-exceptions:
     status: exempt
     comment: Integration registers no custom actions.
-  docs-configuration-parameters: todo
-  docs-installation-parameters: todo
+  docs-configuration-parameters: done
+  docs-installation-parameters: done
   reauthentication-flow: done
   test-coverage: done
   # Gold
   devices: done
-  diagnostics: todo
+  diagnostics: done
   discovery:
     status: exempt
     comment: Cloud service, not discoverable on the network.
-  entity-category: todo
+  entity-category:
+    status: exempt
+    comment: All entities are primary data; none are config or diagnostic.
   entity-device-class: done
-  entity-disabled-by-default: todo
+  entity-disabled-by-default:
+    status: exempt
+    comment: Every entity carries primary value for automations or the map.
   entity-translations: done
-  exception-translations: todo
-  icon-translations: todo
+  exception-translations:
+    status: exempt
+    comment: No custom service actions; flow errors are translated via strings.
+  icon-translations: done
   reconfiguration-flow: todo
-  repair-issues: todo
-  stale-devices: todo
+  repair-issues: done
+  stale-devices: done
   # Platinum
   async-dependency: done
   inject-websession: done

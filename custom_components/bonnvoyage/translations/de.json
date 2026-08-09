@@ -279,5 +279,11 @@
         "name": "Neue Verkehrsmeldung"
       }
     }
+  },
+  "issues": {
+    "source_down": {
+      "title": "Datenquelle seit Stunden nicht erreichbar",
+      "description": "Die Datenquelle `{source}` schlägt seit mehr als 6 Stunden fehl. Die betroffenen Entitäten sind nicht verfügbar. Prüfe deine Internetverbindung; ist sie in Ordnung, liegt eine Störung des Anbieters vor — diese Meldung verschwindet automatisch, sobald die Quelle wieder liefert."
+    }
   }
 }

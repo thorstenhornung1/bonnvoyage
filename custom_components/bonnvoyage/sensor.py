@@ -262,6 +262,9 @@ class BonnVoyageDisruptedSegmentsSensor(
     """Number of disrupted city segments inside the configured area."""
 
     _attr_has_entity_name = True
+    _attr_attribution = (
+        "Datenquelle: Bundesstadt Bonn, Amt 66, https://opendata.bonn.de"
+    )
     _attr_translation_key = "disrupted_segments"
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_unique_id = "disrupted_segments"

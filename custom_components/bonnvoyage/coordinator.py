@@ -9,6 +9,7 @@ import logging
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 from homeassistant.util.location import distance
@@ -35,6 +36,7 @@ from .const import (
     MESSAGES_UPDATE_INTERVAL,
     PARKING_STALE_TOLERANCE,
     PARKING_UPDATE_INTERVAL,
+    REPAIR_OUTAGE_AFTER,
     ROUTE_STALE_TOLERANCE,
     ROUTE_UPDATE_INTERVAL,
     SEGMENT_STALE_TOLERANCE,
@@ -68,6 +70,41 @@ class BonnVoyageRuntimeData:
     routes: dict[str, RouteCoordinator] = field(default_factory=dict)
 
 
+class SourceHealthMixin:
+    """Track persistent source outages and raise repair issues.
+
+    A repair issue is created once a source has been failing for longer
+    than REPAIR_OUTAGE_AFTER (architecture review: not before 6 hours)
+    and deleted again on the first successful refresh.
+    """
+
+    hass: HomeAssistant
+    name: str
+    _down_since: float | None = None
+
+    def _report_health(self, healthy: bool) -> None:
+        issue_id = f"source_down_{self.name}"
+        if healthy:
+            if self._down_since is not None:
+                self._down_since = None
+                ir.async_delete_issue(self.hass, DOMAIN, issue_id)
+            return
+        now = dt_util.utcnow().timestamp()
+        if self._down_since is None:
+            self._down_since = now
+            return
+        if now - self._down_since >= REPAIR_OUTAGE_AFTER.total_seconds():
+            ir.async_create_issue(
+                self.hass,
+                DOMAIN,
+                issue_id,
+                is_fixable=False,
+                severity=ir.IssueSeverity.WARNING,
+                translation_key="source_down",
+                translation_placeholders={"source": self.name},
+            )
+
+
 @dataclass(frozen=True, slots=True)
 class ParkingData:
     """Live status of one facility enriched with the computed trend."""
@@ -76,7 +113,7 @@ class ParkingData:
     trend: ParkingTrend | None
 
 
-class BcpCoordinator(DataUpdateCoordinator[dict[str, ParkingData]]):
+class BcpCoordinator(SourceHealthMixin, DataUpdateCoordinator[dict[str, ParkingData]]):
     """Coordinator for the BCP Bonn parking feed."""
 
     config_entry: BonnVoyageConfigEntry
@@ -117,6 +154,7 @@ class BcpCoordinator(DataUpdateCoordinator[dict[str, ParkingData]]):
             statuses = await self._client.async_fetch_statuses()
         except BonnVoyageApiError as err:
             self._failure_count += 1
+            self._report_health(False)
             if self.data and self._failure_count <= PARKING_STALE_TOLERANCE:
                 _LOGGER.warning(
                     "BCP feed unavailable (%s/%s), keeping stale data: %s",
@@ -128,6 +166,7 @@ class BcpCoordinator(DataUpdateCoordinator[dict[str, ParkingData]]):
             raise UpdateFailed(f"BCP feed unavailable: {err}") from err
 
         self._failure_count = 0
+        self._report_health(True)
         now = dt_util.utcnow().timestamp()
         return {
             facility_id: ParkingData(
@@ -175,7 +214,9 @@ class BcpCoordinator(DataUpdateCoordinator[dict[str, ParkingData]]):
         return ParkingTrend.STEADY
 
 
-class MessagesCoordinator(DataUpdateCoordinator[dict[str, TrafficMessage]]):
+class MessagesCoordinator(
+    SourceHealthMixin, DataUpdateCoordinator[dict[str, TrafficMessage]]
+):
     """Base coordinator for traffic message sources with radius filtering.
 
     Refresh failures never raise ConfigEntryNotReady semantics at setup time;
@@ -203,6 +244,7 @@ class MessagesCoordinator(DataUpdateCoordinator[dict[str, TrafficMessage]]):
             messages = await self._async_fetch()
         except BonnVoyageApiError as err:
             self._failure_count += 1
+            self._report_health(False)
             if (
                 self.data is not None
                 and self._failure_count <= MESSAGES_STALE_TOLERANCE
@@ -218,6 +260,7 @@ class MessagesCoordinator(DataUpdateCoordinator[dict[str, TrafficMessage]]):
             raise UpdateFailed(f"{self.name} unavailable: {err}") from err
 
         self._failure_count = 0
+        self._report_health(True)
         return self._filter_by_area(messages)
 
     async def _async_fetch(self) -> dict[str, TrafficMessage]:
@@ -278,7 +321,9 @@ class AutobahnCoordinator(MessagesCoordinator):
         return await self._client.async_fetch_messages(AUTOBAHN_ROADS)
 
 
-class BonnTrafficCoordinator(DataUpdateCoordinator[dict[str, TrafficSegment]]):
+class BonnTrafficCoordinator(
+    SourceHealthMixin, DataUpdateCoordinator[dict[str, TrafficSegment]]
+):
     """Coordinator for the city live traffic layer with radius filtering."""
 
     config_entry: BonnVoyageConfigEntry
@@ -306,6 +351,7 @@ class BonnTrafficCoordinator(DataUpdateCoordinator[dict[str, TrafficSegment]]):
             segments = await self._client.async_fetch_segments()
         except BonnVoyageApiError as err:
             self._failure_count += 1
+            self._report_health(False)
             if self.data is not None and self._failure_count <= SEGMENT_STALE_TOLERANCE:
                 _LOGGER.warning(
                     "%s unavailable (%s/%s), keeping stale data: %s",
@@ -317,6 +363,7 @@ class BonnTrafficCoordinator(DataUpdateCoordinator[dict[str, TrafficSegment]]):
                 return self.data
             raise UpdateFailed(f"{self.name} unavailable: {err}") from err
         self._failure_count = 0
+        self._report_health(True)
         return segments
 
     def disrupted_in_area(self) -> dict[str, TrafficSegment]:
@@ -339,7 +386,7 @@ class BonnTrafficCoordinator(DataUpdateCoordinator[dict[str, TrafficSegment]]):
         return disrupted
 
 
-class RouteCoordinator(DataUpdateCoordinator[RouteResult]):
+class RouteCoordinator(SourceHealthMixin, DataUpdateCoordinator[RouteResult]):
     """Coordinator for one configured route (one per route subentry)."""
 
     config_entry: BonnVoyageConfigEntry
@@ -372,6 +419,7 @@ class RouteCoordinator(DataUpdateCoordinator[RouteResult]):
             raise ConfigEntryAuthFailed from err
         except BonnVoyageApiError as err:
             self._failure_count += 1
+            self._report_health(False)
             if self.data is not None and self._failure_count <= ROUTE_STALE_TOLERANCE:
                 _LOGGER.warning(
                     "%s unavailable (%s/%s), keeping stale data: %s",
@@ -383,4 +431,5 @@ class RouteCoordinator(DataUpdateCoordinator[RouteResult]):
                 return self.data
             raise UpdateFailed(f"{self.name} unavailable: {err}") from err
         self._failure_count = 0
+        self._report_health(True)
         return result

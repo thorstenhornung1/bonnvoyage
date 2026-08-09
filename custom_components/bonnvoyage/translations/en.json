@@ -279,5 +279,11 @@
         "name": "New traffic message"
       }
     }
+  },
+  "issues": {
+    "source_down": {
+      "title": "Data source unavailable for hours",
+      "description": "The data source `{source}` has been failing for more than 6 hours. The affected entities are unavailable. Check your internet connection; if it is fine, the upstream service is disrupted — this issue disappears automatically once the source recovers."
+    }
   }
 }

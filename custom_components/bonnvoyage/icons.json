@@ -1,0 +1,25 @@
+{
+  "entity": {
+    "sensor": {
+      "free_spaces": {"default": "mdi:parking"},
+      "occupancy": {"default": "mdi:car-multiple"},
+      "trend": {"default": "mdi:swap-vertical"},
+      "active_messages": {"default": "mdi:message-alert-outline"},
+      "disrupted_segments": {"default": "mdi:car-brake-alert"},
+      "segment_status": {"default": "mdi:traffic-light"},
+      "segment_speed": {"default": "mdi:speedometer"},
+      "travel_time": {"default": "mdi:timer-outline"},
+      "delay": {"default": "mdi:timer-alert-outline"},
+      "traffic_level": {"default": "mdi:traffic-light"}
+    },
+    "binary_sensor": {
+      "open": {"default": "mdi:door-open", "state": {"off": "mdi:door-closed"}},
+      "full": {"default": "mdi:car-off"},
+      "segment_congestion": {"default": "mdi:car-brake-alert"},
+      "route_congestion": {"default": "mdi:car-brake-alert"}
+    },
+    "event": {
+      "new_message": {"default": "mdi:bullhorn-outline"}
+    }
+  }
+}

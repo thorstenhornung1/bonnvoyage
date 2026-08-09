@@ -35,25 +35,27 @@ STATUS_CLOSED: Final = 2
 # coordinates, and the facilities themselves have been stable for years, so
 # they ship with the integration, keyed by the slugified feed identifier.
 #
-# NOTE: Coordinates are approximations for development. Verifying every entry
-# against OpenStreetMap/official sources is a release gate (see PLAN.md M1).
+# Coordinates verified against OpenStreetMap (Overpass, 2026-08-09) via the
+# operator tag "Bonner City Parkraum"; 12 of 14 confirmed. Exceptions:
+# "beetplatz" (surface lot, unnamed in OSM) and "karstadt" (feed entry dead
+# since 2018) remain estimates.
 STATIC_FACILITIES: Final[dict[str, ParkingFacility]] = {
     facility.facility_id: facility
     for facility in (
-        ParkingFacility("beethoven", "Beethoven-Parkhaus", 50.7414, 7.1002),
+        ParkingFacility("beethoven", "Beethoven-Parkhaus", 50.73942, 7.10279),
         ParkingFacility("beetplatz", "Parkplatz Beethovenplatz", 50.7398, 7.0925),
-        ParkingFacility("friedensplatz", "Friedensplatzgarage", 50.7352, 7.0975),
-        ParkingFacility("karstadt", "Parkhaus Poststraße", 50.7346, 7.0965),
-        ParkingFacility("markt", "Marktgarage", 50.7345, 7.1028),
-        ParkingFacility("muensterplatz", "Münsterplatzgarage", 50.7336, 7.0961),
-        ParkingFacility("operngarage", "Operngarage", 50.7381, 7.1046),
-        ParkingFacility("rabinstrasse", "Parkhaus Rabinstraße", 50.7330, 7.0930),
-        ParkingFacility("rheinaue", "Parkhaus Rheinaue", 50.7124, 7.1310),
-        ParkingFacility("stadthaus", "Stadthausgarage", 50.7382, 7.0950),
-        ParkingFacility("stadthaus_unten", "Stadthausgarage (unten)", 50.7382, 7.0950),
-        ParkingFacility("unigarage", "Uni-Parkhaus", 50.7325, 7.0990),
-        ParkingFacility("hauptbahnhof", "Parkhaus Hauptbahnhof", 50.7320, 7.0965),
-        ParkingFacility("bike_ride", "Fahrradparkhaus Hauptbahnhof", 50.7325, 7.0975),
+        ParkingFacility("friedensplatz", "Friedensplatzgarage", 50.73695, 7.09682),
+        ParkingFacility("karstadt", "Parkhaus Poststraße", 50.735, 7.0973),
+        ParkingFacility("markt", "Marktgarage", 50.73474, 7.10323),
+        ParkingFacility("muensterplatz", "Münsterplatzgarage", 50.73407, 7.09891),
+        ParkingFacility("operngarage", "Operngarage", 50.73737, 7.10641),
+        ParkingFacility("rabinstrasse", "Parkhaus Rabinstraße", 50.73457, 7.09176),
+        ParkingFacility("rheinaue", "Parkplatz Rheinaue", 50.70624, 7.14675),
+        ParkingFacility("stadthaus", "Stadthausgarage", 50.7371, 7.09457),
+        ParkingFacility("stadthaus_unten", "Stadthausgarage (unten)", 50.7371, 7.09457),
+        ParkingFacility("unigarage", "Uni-Garage", 50.73366, 7.10377),
+        ParkingFacility("hauptbahnhof", "Parkhaus Hauptbahnhof", 50.73332, 7.0935),
+        ParkingFacility("bike_ride", "Radstation Hauptbahnhof", 50.73132, 7.09779),
     )
 }
 

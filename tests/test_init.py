@@ -64,8 +64,8 @@ async def test_setup_creates_entities(hass: HomeAssistant, bcp_feed: None) -> No
     free = hass.states.get("sensor.marktgarage_free_spaces")
     assert free is not None
     assert free.state == "251"
-    assert free.attributes["latitude"] == 50.7345
-    assert free.attributes["longitude"] == 7.1028
+    assert free.attributes["latitude"] == 50.73474
+    assert free.attributes["longitude"] == 7.10323
     assert free.attributes["capacity"] == 287
 
     occupancy = hass.states.get("sensor.marktgarage_occupancy")

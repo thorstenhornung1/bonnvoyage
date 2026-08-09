@@ -188,7 +188,9 @@ class BonnVoyageSegmentLocationEvent(
     _attr_source = DOMAIN
     _attr_unit_of_measurement = UnitOfLength.KILOMETERS
     _attr_icon = "mdi:car-brake-alert"
-    _attr_attribution = "Stadt Bonn"
+    _attr_attribution = (
+        "Datenquelle: Bundesstadt Bonn, Amt 66, https://opendata.bonn.de"
+    )
 
     def __init__(
         self,
