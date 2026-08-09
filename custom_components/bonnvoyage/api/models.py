@@ -97,3 +97,33 @@ class RouteResult:
     no_traffic_time_s: int | None = None
     delay_s: int | None = None
     length_m: int | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class TransitStop:
+    """A public transport stop from the transitous geocoder."""
+
+    stop_id: str
+    name: str
+    latitude: float
+    longitude: float
+
+
+@dataclass(frozen=True, slots=True)
+class Departure:
+    """One upcoming departure at a watched stop."""
+
+    line: str
+    headsign: str
+    mode: str
+    scheduled: datetime
+    actual: datetime | None
+    realtime: bool
+    cancelled: bool
+
+    @property
+    def delay_s(self) -> int | None:
+        """Delay in seconds, or None without realtime data."""
+        if self.actual is None or not self.realtime:
+            return None
+        return max(int((self.actual - self.scheduled).total_seconds()), 0)

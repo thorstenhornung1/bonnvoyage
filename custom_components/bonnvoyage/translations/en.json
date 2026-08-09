@@ -193,6 +193,40 @@
       "abort": {
         "segments_unavailable": "The city traffic layer is currently unreachable. Please try again later."
       }
+    },
+    "stop": {
+      "initiate_flow": {
+        "user": "Watch transit stop"
+      },
+      "entry_type": "Transit stop",
+      "step": {
+        "user": {
+          "title": "Watch transit stop",
+          "description": "Live departures for Bonn's trams and buses via the community service transitous.org (DELFI data) – no API key needed. Search for a stop by name.",
+          "data": {
+            "query": "Stop name",
+            "delay_alert_threshold": "Delay alert from"
+          },
+          "data_description": {
+            "query": "For example \"Bonn Stadthaus\" or \"Bertha-von-Suttner-Platz\".",
+            "delay_alert_threshold": "The delay sensor reports a problem once an upcoming departure is delayed by this many minutes."
+          }
+        },
+        "select": {
+          "title": "Pick a stop",
+          "description": "Matches sorted by distance from your home.",
+          "data": {
+            "stop_id": "Stop"
+          }
+        }
+      },
+      "error": {
+        "no_stops_found": "No stops found for this search. Try the official stop name, e.g. \"Bonn Hauptbahnhof\".",
+        "already_configured": "This stop is already being watched."
+      },
+      "abort": {
+        "transitous_unavailable": "transitous.org is currently unreachable. Please try again later."
+      }
     }
   },
   "options": {
@@ -258,6 +292,12 @@
           "queuing": "Queuing",
           "congested": "Congested"
         }
+      },
+      "next_departure": {
+        "name": "Next departure"
+      },
+      "max_delay": {
+        "name": "Largest delay"
       }
     },
     "binary_sensor": {
@@ -272,6 +312,9 @@
       },
       "route_congestion": {
         "name": "Congestion"
+      },
+      "stop_delay": {
+        "name": "Delay"
       }
     },
     "event": {

@@ -16,14 +16,17 @@ from .api.bonn_geo import BonnGeoClient
 from .api.bonn_traffic import BonnTrafficClient
 from .api.models import RoutePoint, RouteRequest
 from .api.routing import create_provider
+from .api.transitous import TransitousClient
 from .const import (
     CONF_API_KEY,
     CONF_DESTINATION,
     CONF_PROVIDER,
     CONF_START,
+    CONF_STOP_ID,
     CONF_VIA,
     SUBENTRY_TYPE_PARKING,
     SUBENTRY_TYPE_ROUTE,
+    SUBENTRY_TYPE_STOP,
 )
 from .coordinator import (
     AutobahnCoordinator,
@@ -33,6 +36,7 @@ from .coordinator import (
     BonnVoyageConfigEntry,
     BonnVoyageRuntimeData,
     RouteCoordinator,
+    StopCoordinator,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -94,6 +98,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: BonnVoyageConfigEntry) -
             runtime.routes[subentry.subentry_id] = coordinator
     elif route_subentries:
         _LOGGER.warning("Route subentries configured but no routing provider is set up")
+
+    # Transit stops poll a community service without SLA: not setup-critical.
+    stop_client = TransitousClient(session)
+    for subentry in entry.subentries.values():
+        if subentry.subentry_type != SUBENTRY_TYPE_STOP:
+            continue
+        stop_coordinator = StopCoordinator(
+            hass, entry, stop_client, subentry.data[CONF_STOP_ID], subentry.subentry_id
+        )
+        await stop_coordinator.async_refresh()
+        runtime.stops[subentry.subentry_id] = stop_coordinator
 
     _remove_orphaned_geo_entities(hass, entry)
 

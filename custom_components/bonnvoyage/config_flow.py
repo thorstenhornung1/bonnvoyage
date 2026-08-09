@@ -44,12 +44,20 @@ from .api.exceptions import (
     ApiRouteNotFoundError,
     BonnVoyageApiError,
 )
-from .api.models import ParkingFacility, RoutePoint, RouteRequest, TrafficSegment
+from .api.models import (
+    ParkingFacility,
+    RoutePoint,
+    RouteRequest,
+    TrafficSegment,
+    TransitStop,
+)
 from .api.routing import PROVIDERS, RouteProvider, create_provider
+from .api.transitous import TransitousClient
 from .const import (
     CONF_ADD_VIA,
     CONF_API_KEY,
     CONF_AREA,
+    CONF_DELAY_ALERT_THRESHOLD,
     CONF_DELAY_THRESHOLD,
     CONF_DESTINATION,
     CONF_FACILITY_ID,
@@ -57,9 +65,12 @@ from .const import (
     CONF_NAME,
     CONF_PARKINGS,
     CONF_PROVIDER,
+    CONF_QUERY,
     CONF_SEGMENT_ID,
     CONF_START,
+    CONF_STOP_ID,
     CONF_VIA,
+    DEFAULT_DELAY_ALERT_MIN,
     DEFAULT_DELAY_THRESHOLD_MIN,
     DEFAULT_RADIUS_M,
     DOMAIN,
@@ -72,6 +83,7 @@ from .const import (
     SUBENTRY_TYPE_PARKING,
     SUBENTRY_TYPE_ROUTE,
     SUBENTRY_TYPE_SEGMENT,
+    SUBENTRY_TYPE_STOP,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -221,6 +233,7 @@ class BonnVoyageConfigFlow(ConfigFlow, domain=DOMAIN):
             SUBENTRY_TYPE_PARKING: ParkingSubentryFlowHandler,
             SUBENTRY_TYPE_ROUTE: RouteSubentryFlowHandler,
             SUBENTRY_TYPE_SEGMENT: SegmentSubentryFlowHandler,
+            SUBENTRY_TYPE_STOP: StopSubentryFlowHandler,
         }
 
     @staticmethod
@@ -820,6 +833,113 @@ def _closest_segment(
                 best = segment
                 best_meters = meters
     return best, best_meters
+
+
+class StopSubentryFlowHandler(ConfigSubentryFlow):
+    """Watch a public transport stop (transitous.org search)."""
+
+    def __init__(self) -> None:
+        """Initialize the subentry flow."""
+        super().__init__()
+        self._stops: dict[str, TransitStop] = {}
+        self._threshold: int = DEFAULT_DELAY_ALERT_MIN
+
+    async def async_step_user(
+        self, user_input: dict[str, Any] | None = None
+    ) -> SubentryFlowResult:
+        """Search a stop by name."""
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            self._threshold = user_input[CONF_DELAY_ALERT_THRESHOLD]
+            client = TransitousClient(async_get_clientsession(self.hass))
+            try:
+                results = await client.async_search_stops(user_input[CONF_QUERY])
+            except BonnVoyageApiError:
+                return self.async_abort(reason="transitous_unavailable")
+            if not results:
+                errors["base"] = "no_stops_found"
+            else:
+                self._stops = {stop.stop_id: stop for stop in results}
+                return await self.async_step_select()
+
+        schema = self.add_suggested_values_to_schema(
+            vol.Schema(
+                {
+                    vol.Required(CONF_QUERY): str,
+                    vol.Required(
+                        CONF_DELAY_ALERT_THRESHOLD, default=DEFAULT_DELAY_ALERT_MIN
+                    ): vol.All(
+                        NumberSelector(
+                            NumberSelectorConfig(
+                                min=1,
+                                max=60,
+                                step=1,
+                                mode=NumberSelectorMode.BOX,
+                                unit_of_measurement="min",
+                            )
+                        ),
+                        vol.Coerce(int),
+                    ),
+                }
+            ),
+            user_input,
+        )
+        return self.async_show_form(step_id="user", data_schema=schema, errors=errors)
+
+    async def async_step_select(
+        self, user_input: dict[str, Any] | None = None
+    ) -> SubentryFlowResult:
+        """Pick one of the found stops."""
+        entry = self._get_entry()
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            stop = self._stops[user_input[CONF_STOP_ID]]
+            if any(
+                subentry.unique_id == stop.stop_id
+                for subentry in entry.subentries.values()
+                if subentry.subentry_type == SUBENTRY_TYPE_STOP
+            ):
+                errors["base"] = "already_configured"
+            else:
+                return self.async_create_entry(
+                    title=stop.name,
+                    data={
+                        CONF_STOP_ID: stop.stop_id,
+                        CONF_DELAY_ALERT_THRESHOLD: self._threshold,
+                    },
+                    unique_id=stop.stop_id,
+                )
+
+        def _dist(stop: TransitStop) -> float:
+            meters = distance(
+                self.hass.config.latitude,
+                self.hass.config.longitude,
+                stop.latitude,
+                stop.longitude,
+            )
+            return meters if meters is not None else float("inf")
+
+        options = [
+            SelectOptionDict(
+                value=stop.stop_id,
+                label=f"{stop.name} ({_dist(stop) / 1000:.1f} km)",
+            )
+            for stop in sorted(self._stops.values(), key=_dist)
+        ]
+        return self.async_show_form(
+            step_id="select",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_STOP_ID): SelectSelector(
+                        SelectSelectorConfig(
+                            options=options, mode=SelectSelectorMode.LIST
+                        )
+                    )
+                }
+            ),
+            errors=errors,
+        )
 
 
 class BonnVoyageOptionsFlowHandler(OptionsFlow):

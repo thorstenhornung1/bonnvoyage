@@ -15,14 +15,17 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .api.models import ParkingFacility
 from .const import (
+    CONF_DELAY_ALERT_THRESHOLD,
     CONF_DELAY_THRESHOLD,
     CONF_FACILITY_ID,
     CONF_SEGMENT_ID,
+    DEFAULT_DELAY_ALERT_MIN,
     DEFAULT_DELAY_THRESHOLD_MIN,
     DISRUPTED_SEGMENT_STATUSES,
     SUBENTRY_TYPE_PARKING,
     SUBENTRY_TYPE_ROUTE,
     SUBENTRY_TYPE_SEGMENT,
+    SUBENTRY_TYPE_STOP,
 )
 from .coordinator import (
     BcpCoordinator,
@@ -30,9 +33,14 @@ from .coordinator import (
     BonnVoyageConfigEntry,
     ParkingData,
     RouteCoordinator,
+    StopCoordinator,
 )
 from .entity import BonnVoyageParkingEntity
-from .route_entity import BonnVoyageRouteEntity, BonnVoyageSegmentEntity
+from .route_entity import (
+    BonnVoyageRouteEntity,
+    BonnVoyageSegmentEntity,
+    BonnVoyageStopEntity,
+)
 
 PARALLEL_UPDATES = 0
 
@@ -77,6 +85,23 @@ async def async_setup_entry(
                 [
                     BonnVoyageSegmentCongestionSensor(
                         runtime.traffic, subentry.data[CONF_SEGMENT_ID], subentry.title
+                    )
+                ],
+                config_subentry_id=subentry.subentry_id,
+            )
+        elif subentry.subentry_type == SUBENTRY_TYPE_STOP:
+            stop_coordinator = runtime.stops.get(subentry.subentry_id)
+            if stop_coordinator is None:
+                continue
+            async_add_entities(
+                [
+                    BonnVoyageStopDelaySensor(
+                        stop_coordinator,
+                        subentry.subentry_id,
+                        subentry.title,
+                        subentry.data.get(
+                            CONF_DELAY_ALERT_THRESHOLD, DEFAULT_DELAY_ALERT_MIN
+                        ),
                     )
                 ],
                 config_subentry_id=subentry.subentry_id,
@@ -194,3 +219,33 @@ class BonnVoyageRouteCongestionSensor(BonnVoyageRouteEntity, BinarySensorEntity)
     def extra_state_attributes(self) -> dict[str, int]:
         """Expose the configured threshold."""
         return {"delay_threshold_min": self._threshold_s // 60}
+
+
+class BonnVoyageStopDelaySensor(BonnVoyageStopEntity, BinarySensorEntity):
+    """Delay alert of one watched stop."""
+
+    _attr_device_class = BinarySensorDeviceClass.PROBLEM
+
+    def __init__(
+        self,
+        coordinator: StopCoordinator,
+        subentry_id: str,
+        stop_name: str,
+        threshold_min: float,
+    ) -> None:
+        """Initialize the sensor with the configured threshold."""
+        super().__init__(coordinator, subentry_id, stop_name, "stop_delay")
+        self._threshold_s = int(threshold_min * 60)
+
+    @property
+    def is_on(self) -> bool | None:
+        """On while any upcoming departure is delayed beyond the threshold."""
+        delays = [dep.delay_s for dep in self.upcoming() if dep.delay_s is not None]
+        if not delays:
+            return None
+        return max(delays) >= self._threshold_s
+
+    @property
+    def extra_state_attributes(self) -> dict[str, int]:
+        """Expose the configured threshold."""
+        return {"delay_alert_threshold_min": self._threshold_s // 60}

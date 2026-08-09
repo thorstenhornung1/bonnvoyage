@@ -193,6 +193,40 @@
       "abort": {
         "segments_unavailable": "Die Stadt-Verkehrslage ist derzeit nicht erreichbar. Versuche es später erneut."
       }
+    },
+    "stop": {
+      "initiate_flow": {
+        "user": "Haltestelle beobachten"
+      },
+      "entry_type": "Haltestelle",
+      "step": {
+        "user": {
+          "title": "Haltestelle beobachten",
+          "description": "Live-Abfahrten der Bonner Bahnen und Busse über den Community-Dienst transitous.org (DELFI-Daten) – ohne API-Schlüssel. Suche eine Haltestelle nach Namen.",
+          "data": {
+            "query": "Haltestellenname",
+            "delay_alert_threshold": "Verspätungs-Alarm ab"
+          },
+          "data_description": {
+            "query": "Zum Beispiel „Bonn Stadthaus“ oder „Bertha-von-Suttner-Platz“.",
+            "delay_alert_threshold": "Der Verspätungs-Sensor meldet ein Problem, sobald eine der nächsten Abfahrten um so viele Minuten verspätet ist."
+          }
+        },
+        "select": {
+          "title": "Haltestelle auswählen",
+          "description": "Treffer nach Entfernung zu deinem Zuhause sortiert.",
+          "data": {
+            "stop_id": "Haltestelle"
+          }
+        }
+      },
+      "error": {
+        "no_stops_found": "Keine Haltestelle zu dieser Suche gefunden. Versuche den offiziellen Haltestellennamen, z. B. „Bonn Hauptbahnhof“.",
+        "already_configured": "Diese Haltestelle wird bereits beobachtet."
+      },
+      "abort": {
+        "transitous_unavailable": "transitous.org ist derzeit nicht erreichbar. Versuche es später erneut."
+      }
     }
   },
   "options": {
@@ -258,6 +292,12 @@
           "queuing": "Stockend",
           "congested": "Stau"
         }
+      },
+      "next_departure": {
+        "name": "Nächste Abfahrt"
+      },
+      "max_delay": {
+        "name": "Größte Verspätung"
       }
     },
     "binary_sensor": {
@@ -272,6 +312,9 @@
       },
       "route_congestion": {
         "name": "Stau"
+      },
+      "stop_delay": {
+        "name": "Verspätung"
       }
     },
     "event": {

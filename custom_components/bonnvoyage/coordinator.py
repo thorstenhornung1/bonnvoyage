@@ -20,6 +20,7 @@ from .api.bonn_geo import BonnGeoClient
 from .api.bonn_traffic import BonnTrafficClient
 from .api.exceptions import ApiAuthError, BonnVoyageApiError
 from .api.models import (
+    Departure,
     ParkingFacility,
     ParkingStatus,
     RouteRequest,
@@ -28,9 +29,11 @@ from .api.models import (
     TrafficSegment,
 )
 from .api.routing import RouteProvider
+from .api.transitous import TransitousClient
 from .const import (
     AUTOBAHN_ROADS,
     CONF_AREA,
+    DEPARTURES_COUNT,
     DOMAIN,
     MESSAGES_STALE_TOLERANCE,
     MESSAGES_UPDATE_INTERVAL,
@@ -41,6 +44,8 @@ from .const import (
     ROUTE_UPDATE_INTERVAL,
     SEGMENT_STALE_TOLERANCE,
     SEGMENT_UPDATE_INTERVAL,
+    STOP_STALE_TOLERANCE,
+    STOP_UPDATE_INTERVAL,
     TREND_BUFFER_MAX_SAMPLES,
     TREND_MIN_DELTA_CAPACITY_FRACTION,
     TREND_MIN_DELTA_SPACES,
@@ -68,6 +73,7 @@ class BonnVoyageRuntimeData:
     traffic: BonnTrafficCoordinator
     provider: RouteProvider | None = None
     routes: dict[str, RouteCoordinator] = field(default_factory=dict)
+    stops: dict[str, StopCoordinator] = field(default_factory=dict)
 
 
 class SourceHealthMixin:
@@ -433,3 +439,52 @@ class RouteCoordinator(SourceHealthMixin, DataUpdateCoordinator[RouteResult]):
         self._failure_count = 0
         self._report_health(True)
         return result
+
+
+class StopCoordinator(SourceHealthMixin, DataUpdateCoordinator[list[Departure]]):
+    """Coordinator for the departures of one watched transit stop."""
+
+    config_entry: BonnVoyageConfigEntry
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        entry: BonnVoyageConfigEntry,
+        client: TransitousClient,
+        stop_id: str,
+        subentry_id: str,
+    ) -> None:
+        """Initialize the coordinator."""
+        super().__init__(
+            hass,
+            _LOGGER,
+            config_entry=entry,
+            name=f"{DOMAIN}_stop_{subentry_id}",
+            update_interval=STOP_UPDATE_INTERVAL,
+        )
+        self._client = client
+        self._stop_id = stop_id
+        self._failure_count = 0
+
+    async def _async_update_data(self) -> list[Departure]:
+        """Fetch departures, tolerating brief outages with stale data."""
+        try:
+            departures = await self._client.async_departures(
+                self._stop_id, DEPARTURES_COUNT
+            )
+        except BonnVoyageApiError as err:
+            self._failure_count += 1
+            self._report_health(False)
+            if self.data is not None and self._failure_count <= STOP_STALE_TOLERANCE:
+                _LOGGER.warning(
+                    "%s unavailable (%s/%s), keeping stale data: %s",
+                    self.name,
+                    self._failure_count,
+                    STOP_STALE_TOLERANCE,
+                    err,
+                )
+                return self.data
+            raise UpdateFailed(f"{self.name} unavailable: {err}") from err
+        self._failure_count = 0
+        self._report_health(True)
+        return departures

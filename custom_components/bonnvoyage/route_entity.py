@@ -5,9 +5,9 @@ from __future__ import annotations
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .api.models import TrafficSegment
+from .api.models import Departure, TrafficSegment
 from .const import DOMAIN
-from .coordinator import BonnTrafficCoordinator, RouteCoordinator
+from .coordinator import BonnTrafficCoordinator, RouteCoordinator, StopCoordinator
 
 
 class BonnVoyageRouteEntity(CoordinatorEntity[RouteCoordinator]):
@@ -70,3 +70,31 @@ class BonnVoyageSegmentEntity(CoordinatorEntity[BonnTrafficCoordinator]):
     def available(self) -> bool:
         """Unavailable if the segment vanished from the layer."""
         return super().available and self.segment is not None
+
+
+class BonnVoyageStopEntity(CoordinatorEntity[StopCoordinator]):
+    """Base class for entities of one watched transit stop."""
+
+    _attr_has_entity_name = True
+    _attr_attribution = "transitous.org (DELFI)"
+
+    def __init__(
+        self,
+        coordinator: StopCoordinator,
+        subentry_id: str,
+        stop_name: str,
+        key: str,
+    ) -> None:
+        """Initialize the entity for one stop."""
+        super().__init__(coordinator)
+        self._attr_unique_id = f"stop_{subentry_id}_{key}"
+        self._attr_translation_key = key
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, f"stop_{subentry_id}")},
+            name=stop_name,
+            entry_type=DeviceEntryType.SERVICE,
+        )
+
+    def upcoming(self) -> list[Departure]:
+        """Non-cancelled upcoming departures."""
+        return [dep for dep in (self.coordinator.data or []) if not dep.cancelled]

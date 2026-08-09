@@ -19,6 +19,7 @@ Qualitätsziel: [Home Assistant Quality Scale](https://developers.home-assistant
 | 🛣️ Autobahn-Meldungen A555/A559/A565 (Baustellen, Sperrungen, Warnungen) | Autobahn GmbH | nein |
 | 🚦 Live-Verkehrslage auf 111 Bonner Hauptstraßen-Abschnitten | Stadt Bonn | nein |
 | ⏱️ Reisezeit, Verzögerung und Stau-Alarm für eigene Strecken | TomTom (optional) | ja (eigener Free-Tier-Key) |
+| 🚌 Live-Abfahrten & Verspätungen für Bahnen und Busse | transitous.org (DELFI) | nein |
 
 Alle Entities mit Geodaten erscheinen direkt auf der **Home-Assistant-Standardkarte**.
 
@@ -56,6 +57,8 @@ Danach lassen sich auf der Integrationsseite jederzeit hinzufügen:
 - **Strecke hinzufügen** — 3-Schritte-Assistent: Start (Zone oder Karte) → Ziel →
   Name + Stau-Schwelle (Default 10 min); optional ein Zwischenpunkt. Beim Speichern
   wird eine Proberoute gerechnet, damit keine toten Sensoren entstehen.
+- **Haltestelle beobachten** — Haltestelle per Namenssuche wählen (z. B.
+  „Bonn Stadthaus“); Verspätungs-Alarm-Schwelle konfigurierbar (Default 5 min).
 
 **Optionen** (Zahnrad): Bereich für Meldungen ändern. **Reauth**:
 Bei ungültig gewordenem TomTom-Schlüssel startet Home Assistant automatisch den
@@ -74,6 +77,10 @@ ermittelbar), Geschwindigkeit km/h, Stau (Problem-Sensor).
 Verkehrslage (frei/dicht/stockend/Stau aus dem Verhältnis Live- zu
 Freifahrt-Zeit), Stau (Problem-Sensor ab konfigurierter Verzögerung).
 
+**Pro Haltestelle** (Gerät): Nächste Abfahrt (Zeitstempel, HA zeigt „in X min“;
+Abfahrtstafel mit Linie, Ziel, Soll/Ist und Verspätung als Attribut), Größte
+Verspätung (min), Verspätungs-Alarm (Problem-Sensor ab konfigurierter Schwelle).
+
 **Gerät „Verkehrsmeldungen Bonn"**: Aktive Meldungen (Anzahl), Gestörte
 Abschnitte (Anzahl), Event „Neue Verkehrsmeldung" (Automationstrigger; feuert
 nicht beim Neustart).
@@ -88,6 +95,7 @@ nicht beim Neustart).
 | Parkhäuser | 2 min |
 | Stadt-Verkehrslage | 5 min |
 | Strecken (TomTom) | 5 min |
+| Haltestellen-Abfahrten | 2 min |
 | Baustellen & Autobahn-Meldungen | 30 min |
 
 Die Intervalle sind fest (HA-Richtlinie). Einzelne Entities lassen sich über
@@ -160,6 +168,9 @@ automation:
   läuft über den Karten-Punkt. Nur ausgewählte Hauptstraßen werden gemessen.
 - Der BCP-Feed führt einzelne tote Einträge (z. B. „karstadt", eingefroren
   seit 2018) — sie werden automatisch ausgeblendet.
+- **transitous.org** ist ein community-betriebener Dienst ohne
+  Verfügbarkeitsgarantie (Fair Use). Kurze Ausfälle überbrückt die Integration;
+  bitte nicht mehr als eine Handvoll Haltestellen beobachten.
 - Es ist genau eine BonnVoyage-Instanz möglich (Region ist fest Bonn).
 
 ## Fehlerbehebung
@@ -188,6 +199,7 @@ Config-Eintrag gelöscht). Anschließend ggf. das HACS-Repository deinstallieren
 | Parkhaus-Belegung (BCP) | **CC BY-NC 4.0** | „Bonner City Parkraum GmbH" |
 | Autobahn-API (bund.dev) | GovData-Portal | „Autobahn GmbH des Bundes" |
 | TomTom Routing | TomTom-ToS (eigener Key) | „© TomTom" |
+| ÖPNV-Abfahrten | transitous.org (Community, Fair Use) / DELFI | „transitous.org (DELFI)“ |
 
 **Hinweis zur BCP-Lizenz (NC)**: Die Parkhausdaten sind nur für
 nicht-kommerzielle Nutzung frei — für den privaten Smart-Home-Einsatz

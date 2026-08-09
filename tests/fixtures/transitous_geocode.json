@@ -1,0 +1,665 @@
+[
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0.0,
+    4.0
+   ],
+   [
+    5.0,
+    9.0
+   ]
+  ],
+  "name": "Bonn Stadthaus",
+  "id": "de-DELFI_de:05314:61114:1:13",
+  "lat": 50.73650000000001,
+  "lon": 7.095972,
+  "country": "DE",
+  "zip": "53111",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Nordrhein-Westfalen",
+    "adminLevel": 4.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Regierungsbezirk Köln",
+    "adminLevel": 5.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Bonn",
+    "adminLevel": 6.0,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Stadtbezirk Bonn",
+    "adminLevel": 9.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Bonn-Zentrum",
+    "adminLevel": 10.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -25.125263214111328,
+  "modes": [
+   "TRAM",
+   "BUS"
+  ],
+  "importance": 0.0025588751304894686
+ },
+ {
+  "type": "PLACE",
+  "category": "town_hall_16",
+  "tokens": [
+   [
+    0.0,
+    4.0
+   ],
+   [
+    5.0,
+    9.0
+   ]
+  ],
+  "name": "Stadthaus",
+  "id": "way/[321571291]",
+  "lat": 50.7375286,
+  "lon": 7.0942433,
+  "country": "DE",
+  "zip": "53111",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Nordrhein-Westfalen",
+    "adminLevel": 4.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Regierungsbezirk Köln",
+    "adminLevel": 5.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Bonn",
+    "adminLevel": 6.0,
+    "matched": true,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Stadtbezirk Bonn",
+    "adminLevel": 9.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Nordstadt",
+    "adminLevel": 10.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -21.25
+ },
+ {
+  "type": "PLACE",
+  "category": "none",
+  "tokens": [
+   [
+    0.0,
+    4.0
+   ],
+   [
+    5.0,
+    9.0
+   ]
+  ],
+  "name": "Stadthaus-Kita",
+  "id": "node/[3743152125]",
+  "lat": 50.7367446,
+  "lon": 7.0942546,
+  "country": "DE",
+  "zip": "53111",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Nordrhein-Westfalen",
+    "adminLevel": 4.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Regierungsbezirk Köln",
+    "adminLevel": 5.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Bonn",
+    "adminLevel": 6.0,
+    "matched": true,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Stadtbezirk Bonn",
+    "adminLevel": 9.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Nordstadt",
+    "adminLevel": 10.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -17.25
+ },
+ {
+  "type": "PLACE",
+  "category": "none",
+  "tokens": [
+   [
+    0.0,
+    4.0
+   ],
+   [
+    5.0,
+    9.0
+   ]
+  ],
+  "name": "Altes Stadthaus",
+  "id": "way/[4889036]",
+  "lat": 50.7347984,
+  "lon": 7.0974257,
+  "country": "DE",
+  "zip": "53111",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Nordrhein-Westfalen",
+    "adminLevel": 4.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Regierungsbezirk Köln",
+    "adminLevel": 5.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Bonn",
+    "adminLevel": 6.0,
+    "matched": true,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Stadtbezirk Bonn",
+    "adminLevel": 9.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Bonn-Zentrum",
+    "adminLevel": 10.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -17.0
+ },
+ {
+  "type": "PLACE",
+  "category": "none",
+  "tokens": [
+   [
+    0.0,
+    4.0
+   ],
+   [
+    5.0,
+    9.0
+   ]
+  ],
+  "name": "Stadthaus-Kantine",
+  "id": "node/[9432244225]",
+  "lat": 50.7369964,
+  "lon": 7.0949564,
+  "country": "DE",
+  "zip": "53111",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Nordrhein-Westfalen",
+    "adminLevel": 4.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Regierungsbezirk Köln",
+    "adminLevel": 5.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Bonn",
+    "adminLevel": 6.0,
+    "matched": true,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Stadtbezirk Bonn",
+    "adminLevel": 9.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Nordstadt",
+    "adminLevel": 10.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -16.5
+ },
+ {
+  "type": "PLACE",
+  "category": "none",
+  "tokens": [
+   [
+    0.0,
+    4.0
+   ],
+   [
+    5.0,
+    9.0
+   ]
+  ],
+  "name": "Loggia am Stadthaus",
+  "id": "way/[29464726]",
+  "lat": 50.7361808,
+  "lon": 7.0945255,
+  "country": "DE",
+  "zip": "53111",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Nordrhein-Westfalen",
+    "adminLevel": 4.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Regierungsbezirk Köln",
+    "adminLevel": 5.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Bonn",
+    "adminLevel": 6.0,
+    "matched": true,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Stadtbezirk Bonn",
+    "adminLevel": 9.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Nordstadt",
+    "adminLevel": 10.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -16.0
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0.0,
+    4.0
+   ],
+   [
+    5.0,
+    9.0
+   ]
+  ],
+  "name": "Dortmund Stadthaus",
+  "id": "de-DELFI_de:05913:132_G",
+  "lat": 51.507827999999996,
+  "lon": 7.468764,
+  "level": 1.0,
+  "country": "DE",
+  "zip": "44139",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Nordrhein-Westfalen",
+    "adminLevel": 4.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Regierungsbezirk Arnsberg",
+    "adminLevel": 5.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Dortmund",
+    "adminLevel": 6.0,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Innenstadt Ost",
+    "adminLevel": 9.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -15.99958610534668,
+  "modes": [
+   "REGIONAL_RAIL",
+   "SUBURBAN",
+   "SUBWAY",
+   "BUS"
+  ],
+  "importance": 0.07583092153072357
+ },
+ {
+  "type": "PLACE",
+  "category": "none",
+  "tokens": [
+   [
+    0.0,
+    4.0
+   ],
+   [
+    5.0,
+    9.0
+   ]
+  ],
+  "name": "Apotheke im Stadthaus",
+  "id": "node/[254356381]",
+  "lat": 50.7365258,
+  "lon": 7.0944148,
+  "country": "DE",
+  "zip": "53111",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Nordrhein-Westfalen",
+    "adminLevel": 4.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Regierungsbezirk Köln",
+    "adminLevel": 5.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Bonn",
+    "adminLevel": 6.0,
+    "matched": true,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Stadtbezirk Bonn",
+    "adminLevel": 9.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Nordstadt",
+    "adminLevel": 10.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -15.5
+ },
+ {
+  "type": "PLACE",
+  "category": "parking_16",
+  "tokens": [
+   [
+    0.0,
+    4.0
+   ],
+   [
+    5.0,
+    9.0
+   ]
+  ],
+  "name": "Stadthausgarage",
+  "id": "way/[34962528]",
+  "lat": 50.7376462,
+  "lon": 7.094985,
+  "country": "DE",
+  "zip": "53111",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Nordrhein-Westfalen",
+    "adminLevel": 4.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Regierungsbezirk Köln",
+    "adminLevel": 5.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Bonn",
+    "adminLevel": 6.0,
+    "matched": true,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Stadtbezirk Bonn",
+    "adminLevel": 9.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Nordstadt",
+    "adminLevel": 10.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -14.0
+ },
+ {
+  "type": "ADDRESS",
+  "tokens": [
+   [
+    0.0,
+    4.0
+   ],
+   [
+    5.0,
+    9.0
+   ]
+  ],
+  "name": "Stadthaus Passage",
+  "id": "",
+  "lat": 50.7361972,
+  "lon": 7.0949543,
+  "country": "DE",
+  "zip": "53111",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Nordrhein-Westfalen",
+    "adminLevel": 4.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Regierungsbezirk Köln",
+    "adminLevel": 5.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Bonn",
+    "adminLevel": 6.0,
+    "matched": true,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Stadtbezirk Bonn",
+    "adminLevel": 9.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Nordstadt",
+    "adminLevel": 10.0,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -14.0
+ }
+]

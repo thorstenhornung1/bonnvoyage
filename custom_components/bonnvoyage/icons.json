@@ -1,25 +1,67 @@
 {
   "entity": {
     "sensor": {
-      "free_spaces": {"default": "mdi:parking"},
-      "occupancy": {"default": "mdi:car-multiple"},
-      "trend": {"default": "mdi:swap-vertical"},
-      "active_messages": {"default": "mdi:message-alert-outline"},
-      "disrupted_segments": {"default": "mdi:car-brake-alert"},
-      "segment_status": {"default": "mdi:traffic-light"},
-      "segment_speed": {"default": "mdi:speedometer"},
-      "travel_time": {"default": "mdi:timer-outline"},
-      "delay": {"default": "mdi:timer-alert-outline"},
-      "traffic_level": {"default": "mdi:traffic-light"}
+      "free_spaces": {
+        "default": "mdi:parking"
+      },
+      "occupancy": {
+        "default": "mdi:car-multiple"
+      },
+      "trend": {
+        "default": "mdi:swap-vertical"
+      },
+      "active_messages": {
+        "default": "mdi:message-alert-outline"
+      },
+      "disrupted_segments": {
+        "default": "mdi:car-brake-alert"
+      },
+      "segment_status": {
+        "default": "mdi:traffic-light"
+      },
+      "segment_speed": {
+        "default": "mdi:speedometer"
+      },
+      "travel_time": {
+        "default": "mdi:timer-outline"
+      },
+      "delay": {
+        "default": "mdi:timer-alert-outline"
+      },
+      "traffic_level": {
+        "default": "mdi:traffic-light"
+      },
+      "next_departure": {
+        "default": "mdi:bus-clock"
+      },
+      "max_delay": {
+        "default": "mdi:clock-alert-outline"
+      }
     },
     "binary_sensor": {
-      "open": {"default": "mdi:door-open", "state": {"off": "mdi:door-closed"}},
-      "full": {"default": "mdi:car-off"},
-      "segment_congestion": {"default": "mdi:car-brake-alert"},
-      "route_congestion": {"default": "mdi:car-brake-alert"}
+      "open": {
+        "default": "mdi:door-open",
+        "state": {
+          "off": "mdi:door-closed"
+        }
+      },
+      "full": {
+        "default": "mdi:car-off"
+      },
+      "segment_congestion": {
+        "default": "mdi:car-brake-alert"
+      },
+      "route_congestion": {
+        "default": "mdi:car-brake-alert"
+      },
+      "stop_delay": {
+        "default": "mdi:bus-alert"
+      }
     },
     "event": {
-      "new_message": {"default": "mdi:bullhorn-outline"}
+      "new_message": {
+        "default": "mdi:bullhorn-outline"
+      }
     }
   }
 }

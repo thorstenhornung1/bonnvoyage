@@ -160,3 +160,17 @@ DISRUPTED_SEGMENT_STATUSES: Final = (
 # A source that stays broken longer than this raises a repair issue
 # (architecture review: not before 6 hours).
 REPAIR_OUTAGE_AFTER: Final = timedelta(hours=6)
+
+
+# --- Public transport stops (M5, transitous.org / DELFI) ---
+
+SUBENTRY_TYPE_STOP: Final = "stop"
+CONF_STOP_ID: Final = "stop_id"
+CONF_QUERY: Final = "query"
+CONF_DELAY_ALERT_THRESHOLD: Final = "delay_alert_threshold"
+
+STOP_UPDATE_INTERVAL: Final = timedelta(minutes=2)
+STOP_STALE_TOLERANCE: Final = 2
+DEPARTURES_COUNT: Final = 10
+
+DEFAULT_DELAY_ALERT_MIN: Final = 5

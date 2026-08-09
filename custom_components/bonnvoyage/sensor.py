@@ -24,6 +24,7 @@ from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.typing import StateType
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util.location import distance
 
 from .api.models import ParkingFacility, RouteResult
 from .const import (
@@ -34,6 +35,7 @@ from .const import (
     SUBENTRY_TYPE_PARKING,
     SUBENTRY_TYPE_ROUTE,
     SUBENTRY_TYPE_SEGMENT,
+    SUBENTRY_TYPE_STOP,
     TRAFFIC_LEVEL_CONGESTED_RATIO,
     TRAFFIC_LEVEL_HEAVY_RATIO,
     TRAFFIC_LEVEL_QUEUING_RATIO,
@@ -49,9 +51,14 @@ from .coordinator import (
     BonnVoyageConfigEntry,
     ParkingData,
     RouteCoordinator,
+    StopCoordinator,
 )
 from .entity import BonnVoyageParkingEntity
-from .route_entity import BonnVoyageRouteEntity, BonnVoyageSegmentEntity
+from .route_entity import (
+    BonnVoyageRouteEntity,
+    BonnVoyageSegmentEntity,
+    BonnVoyageStopEntity,
+)
 
 PARALLEL_UPDATES = 0
 
@@ -133,6 +140,19 @@ async def async_setup_entry(
                         key,
                     )
                     for key in ("segment_status", "segment_speed")
+                ),
+                config_subentry_id=subentry.subentry_id,
+            )
+        elif subentry.subentry_type == SUBENTRY_TYPE_STOP:
+            stop_coordinator = runtime.stops.get(subentry.subentry_id)
+            if stop_coordinator is None:
+                continue
+            async_add_entities(
+                (
+                    BonnVoyageStopSensor(
+                        stop_coordinator, subentry.subentry_id, subentry.title, key
+                    )
+                    for key in ("next_departure", "max_delay")
                 ),
                 config_subentry_id=subentry.subentry_id,
             )
@@ -319,12 +339,22 @@ class BonnVoyageSegmentSensor(BonnVoyageSegmentEntity, SensorEntity):
         """Expose position and raw status on the status sensor."""
         if self._key != "segment_status" or (segment := self.segment) is None:
             return None
+        length_m = 0.0
+        for (lat1, lon1), (lat2, lon2) in zip(
+            segment.points, segment.points[1:], strict=False
+        ):
+            meters = distance(lat1, lon1, lat2, lon2)
+            if meters:
+                length_m += meters
         return {
             ATTR_LATITUDE: segment.midpoint[0],
             ATTR_LONGITUDE: segment.midpoint[1],
             "segment_id": segment.segment_id,
             "raw_status": segment.raw_status,
             "measured_at": segment.measured_at,
+            "segment_start": list(segment.points[0]),
+            "segment_end": list(segment.points[-1]),
+            "length_km": round(length_m / 1000, 1),
         }
 
 
@@ -373,3 +403,62 @@ class BonnVoyageRouteSensor(BonnVoyageRouteEntity, SensorEntity):
         if result is None or result.length_m is None:
             return None
         return {"length_km": round(result.length_m / 1000, 1)}
+
+
+class BonnVoyageStopSensor(BonnVoyageStopEntity, SensorEntity):
+    """Next departure or maximum delay of one watched stop."""
+
+    def __init__(
+        self,
+        coordinator: StopCoordinator,
+        subentry_id: str,
+        stop_name: str,
+        key: str,
+    ) -> None:
+        """Initialize the sensor."""
+        super().__init__(coordinator, subentry_id, stop_name, key)
+        self._key = key
+        if key == "next_departure":
+            self._attr_device_class = SensorDeviceClass.TIMESTAMP
+            self._unrecorded_attributes = frozenset({"departures"})
+        else:
+            self._attr_device_class = SensorDeviceClass.DURATION
+            self._attr_native_unit_of_measurement = UnitOfTime.MINUTES
+            self._attr_state_class = SensorStateClass.MEASUREMENT
+            self._attr_suggested_display_precision = 0
+
+    @property
+    def native_value(self) -> Any:
+        """Return the next departure time or the maximum delay."""
+        upcoming = self.upcoming()
+        if self._key == "next_departure":
+            if not upcoming:
+                return None
+            first = upcoming[0]
+            return first.actual or first.scheduled
+        delays = [dep.delay_s for dep in upcoming if dep.delay_s is not None]
+        if not delays:
+            return None
+        return round(max(delays) / 60, 1)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Departure board as attribute on the next-departure sensor."""
+        if self._key != "next_departure":
+            return None
+        return {
+            "departures": [
+                {
+                    "line": dep.line,
+                    "destination": dep.headsign,
+                    "mode": dep.mode,
+                    "scheduled": dep.scheduled.isoformat(),
+                    "actual": dep.actual.isoformat() if dep.actual else None,
+                    "delay_min": (
+                        round(dep.delay_s / 60) if dep.delay_s is not None else None
+                    ),
+                    "realtime": dep.realtime,
+                }
+                for dep in self.upcoming()
+            ]
+        }
