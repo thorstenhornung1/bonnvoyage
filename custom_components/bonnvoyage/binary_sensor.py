@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any
 
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
@@ -19,6 +20,8 @@ from .const import (
     CONF_DELAY_THRESHOLD,
     CONF_FACILITY_ID,
     CONF_SEGMENT_ID,
+    CONF_SEGMENT_IDS,
+    CONF_SEGMENT_META,
     DEFAULT_DELAY_ALERT_MIN,
     DEFAULT_DELAY_THRESHOLD_MIN,
     DISRUPTED_SEGMENT_STATUSES,
@@ -37,6 +40,7 @@ from .coordinator import (
 )
 from .entity import BonnVoyageParkingEntity
 from .route_entity import (
+    BonnVoyageCorridorEntity,
     BonnVoyageRouteEntity,
     BonnVoyageSegmentEntity,
     BonnVoyageStopEntity,
@@ -81,6 +85,21 @@ async def async_setup_entry(
     runtime = entry.runtime_data
     for subentry in entry.subentries.values():
         if subentry.subentry_type == SUBENTRY_TYPE_SEGMENT:
+            if CONF_SEGMENT_IDS in subentry.data:
+                async_add_entities(
+                    [
+                        BonnVoyageCorridorCongestionSensor(
+                            runtime.traffic,
+                            subentry.subentry_id,
+                            subentry.title,
+                            subentry.data[CONF_SEGMENT_IDS],
+                            subentry.data.get(CONF_SEGMENT_META, {}),
+                        )
+                    ],
+                    config_subentry_id=subentry.subentry_id,
+                )
+                continue
+            # Legacy single-segment subentries (created before 0.7.0)
             async_add_entities(
                 [
                     BonnVoyageSegmentCongestionSensor(
@@ -249,3 +268,38 @@ class BonnVoyageStopDelaySensor(BonnVoyageStopEntity, BinarySensorEntity):
     def extra_state_attributes(self) -> dict[str, int]:
         """Expose the configured threshold."""
         return {"delay_alert_threshold_min": self._threshold_s // 60}
+
+
+class BonnVoyageCorridorCongestionSensor(BonnVoyageCorridorEntity, BinarySensorEntity):
+    """Congestion indicator of an aggregated corridor."""
+
+    _attr_device_class = BinarySensorDeviceClass.PROBLEM
+
+    def __init__(
+        self,
+        coordinator: BonnTrafficCoordinator,
+        subentry_id: str,
+        corridor_name: str,
+        segment_ids: list[str],
+        segment_meta: dict[str, Any],
+    ) -> None:
+        """Initialize the sensor."""
+        super().__init__(
+            coordinator,
+            subentry_id,
+            corridor_name,
+            segment_ids,
+            segment_meta,
+            "corridor_congestion",
+        )
+
+    @property
+    def is_on(self) -> bool | None:
+        """On while any corridor segment is disrupted."""
+        segments = self.corridor()
+        if not segments:
+            return None
+        known = [seg for seg in segments if seg.status != "unknown"]
+        if not known:
+            return None
+        return any(seg.status in DISRUPTED_SEGMENT_STATUSES for seg in known)

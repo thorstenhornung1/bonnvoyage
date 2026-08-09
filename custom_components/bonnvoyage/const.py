@@ -177,3 +177,8 @@ DEFAULT_DELAY_ALERT_MIN: Final = 5
 
 CONF_STREET_NAME: Final = "street_name"
 CONF_DIRECTION: Final = "direction"
+
+# Corridor mode: segments along a start->destination line (M5c)
+CONF_SEGMENT_IDS: Final = "segment_ids"
+CONF_SEGMENT_META: Final = "segment_meta"
+CORRIDOR_WIDTH_M: Final = 800

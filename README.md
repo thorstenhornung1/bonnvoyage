@@ -52,11 +52,13 @@ ein sichtbares Ergebnis:
 Danach lassen sich auf der Integrationsseite jederzeit hinzufügen:
 
 - **Parkhaus hinzufügen** — weiteres Parkhaus aus der Live-Liste
-- **Stadtstrecke beobachten** — Punkt grob auf die Straße setzen; die
-  Integration zeigt die gemessenen Abschnitte in der Nähe **mit Straßennamen**
-  (via OpenStreetMap/Nominatim, ohne Key), Fahrtrichtung, Entfernung, Länge und
-  Live-Status — du bestätigst explizit und benennst das Gerät (vorbefüllt).
-  Einmal aufgelöste Namen werden dauerhaft gecached.
+- **Stadtstrecke beobachten** — Start und Ziel wählen (Zone oder Karte, wie
+  beim Strecken-Assistenten); die Integration zeigt **alle gemessenen
+  Abschnitte entlang des Korridors** mit Straßennamen (OpenStreetMap, ohne
+  Key), vorausgewählt zur Multiauswahl. Ergebnis ist **ein** Gerät
+  „Pendelachse" mit zusammengefassten Sensoren: schlechtester Verkehrsstatus,
+  langsamster Abschnitt, Anzahl gestörter Abschnitte und Stau-Alarm — plus
+  Abschnittsdetails als Attribut.
 - **Strecke hinzufügen** — 3-Schritte-Assistent: Start (Zone oder Karte) → Ziel →
   Name + Stau-Schwelle (Default 10 min); optional ein Zwischenpunkt. Beim Speichern
   wird eine Proberoute gerechnet, damit keine toten Sensoren entstehen.
@@ -73,8 +75,10 @@ Erneuerungs-Dialog; Parkhäuser und Meldungen laufen währenddessen weiter.
 Auslastung %, Trend (füllt sich/gleichbleibend/leert sich, siehe
 [docs/spec-trend.md](docs/spec-trend.md)), Geöffnet, Voll.
 
-**Pro Stadtstrecke** (Gerät): Verkehrsstatus (normal/erhöht/Staugefahr/Stau/nicht
-ermittelbar), Geschwindigkeit km/h, Stau (Problem-Sensor).
+**Pro Stadtstrecke/Pendelachse** (Gerät): Verkehrslage (schlechtester Status
+entlang der Achse), Langsamster Abschnitt (km/h), Gestörte Abschnitte (Anzahl),
+Stau (Problem-Sensor) — Abschnittsdetails (Name, Richtung, Status, Tempo) als
+Attribut. Vor 0.7.0 angelegte Einzel-Abschnitte laufen unverändert weiter.
 
 **Pro Strecke** (Gerät): Reisezeit und Verzögerung (Minuten, statistikfähig),
 Verkehrslage (frei/dicht/stockend/Stau aus dem Verhältnis Live- zu

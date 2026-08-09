@@ -157,3 +157,59 @@ async def test_geocode_edge_cases() -> None:
             assert await client.async_reverse_street(50.7, 7.0) is None
             assert await client.async_reverse_street(50.7, 7.0) is None
             assert await client.async_reverse_street(50.7, 7.0) == "Fallback-Name"
+
+
+def _corridor_entry():
+    return mock_config_entry(
+        subentries_data=[
+            ConfigSubentryData(
+                data={
+                    "segment_ids": ["49", "100", "144"],
+                    "segment_meta": {
+                        "49": {"street_name": "Bornheimer Straße", "direction": "NO"},
+                        "100": {"street_name": "Nordbrücke", "direction": "SW"},
+                        "144": {"street_name": "Petersbergstraße", "direction": "S"},
+                    },
+                },
+                subentry_type=SUBENTRY_TYPE_SEGMENT,
+                title="Pendelachse Nord",
+                unique_id=None,
+            )
+        ],
+    )
+
+
+async def test_corridor_aggregation(hass: HomeAssistant) -> None:
+    """A corridor aggregates worst status, min speed and disruption count."""
+    entry = _corridor_entry()
+    await _setup(hass, entry)
+    assert entry.state is ConfigEntryState.LOADED
+
+    # Fixture: 49=elevated(19), 100=congestion_risk(4), 144=normal(58)
+    status = hass.states.get("sensor.pendelachse_nord_traffic_situation")
+    assert status is not None
+    assert status.state == "congestion_risk"  # worst along the corridor
+    segments = status.attributes["segments"]
+    assert len(segments) == 3
+    assert segments[0]["segment"] == "Bornheimer Straße (NO)"
+
+    assert hass.states.get("sensor.pendelachse_nord_slowest_segment").state == "4"
+    assert hass.states.get("sensor.pendelachse_nord_disrupted_segments").state == "2"
+    assert hass.states.get("binary_sensor.pendelachse_nord_congestion").state == "on"
+
+
+async def test_corridor_recovers(hass: HomeAssistant, aioclient_mock, freezer) -> None:
+    """A corridor flips back to normal after recovery."""
+    entry = _corridor_entry()
+    await _setup(hass, entry)
+
+    from .test_messages import _remock_feeds
+
+    _remock_feeds(aioclient_mock, traffic_content=_all_normal_layer())
+    await _advance(hass, freezer, SEGMENT_UPDATE_INTERVAL)
+
+    assert (
+        hass.states.get("sensor.pendelachse_nord_traffic_situation").state == "normal"
+    )
+    assert hass.states.get("binary_sensor.pendelachse_nord_congestion").state == "off"
+    assert hass.states.get("sensor.pendelachse_nord_disrupted_segments").state == "0"

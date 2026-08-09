@@ -30,6 +30,9 @@ from .api.models import ParkingFacility, RouteResult
 from .const import (
     CONF_FACILITY_ID,
     CONF_SEGMENT_ID,
+    CONF_SEGMENT_IDS,
+    CONF_SEGMENT_META,
+    DISRUPTED_SEGMENT_STATUSES,
     DOMAIN,
     MESSAGES_DEVICE_ID,
     SUBENTRY_TYPE_PARKING,
@@ -55,6 +58,7 @@ from .coordinator import (
 )
 from .entity import BonnVoyageParkingEntity
 from .route_entity import (
+    BonnVoyageCorridorEntity,
     BonnVoyageRouteEntity,
     BonnVoyageSegmentEntity,
     BonnVoyageStopEntity,
@@ -131,6 +135,27 @@ async def async_setup_entry(
 
     for subentry in entry.subentries.values():
         if subentry.subentry_type == SUBENTRY_TYPE_SEGMENT:
+            if CONF_SEGMENT_IDS in subentry.data:
+                async_add_entities(
+                    (
+                        BonnVoyageCorridorSensor(
+                            runtime.traffic,
+                            subentry.subentry_id,
+                            subentry.title,
+                            subentry.data[CONF_SEGMENT_IDS],
+                            subentry.data.get(CONF_SEGMENT_META, {}),
+                            key,
+                        )
+                        for key in (
+                            "corridor_status",
+                            "corridor_min_speed",
+                            "corridor_disrupted",
+                        )
+                    ),
+                    config_subentry_id=subentry.subentry_id,
+                )
+                continue
+            # Legacy single-segment subentries (created before 0.7.0)
             async_add_entities(
                 (
                     BonnVoyageSegmentSensor(
@@ -462,3 +487,56 @@ class BonnVoyageStopSensor(BonnVoyageStopEntity, SensorEntity):
                 for dep in self.upcoming()
             ]
         }
+
+
+class BonnVoyageCorridorSensor(BonnVoyageCorridorEntity, SensorEntity):
+    """Aggregated status, minimum speed or disruption count of a corridor."""
+
+    def __init__(
+        self,
+        coordinator: BonnTrafficCoordinator,
+        subentry_id: str,
+        corridor_name: str,
+        segment_ids: list[str],
+        segment_meta: dict[str, Any],
+        key: str,
+    ) -> None:
+        """Initialize the sensor."""
+        super().__init__(
+            coordinator, subentry_id, corridor_name, segment_ids, segment_meta, key
+        )
+        self._key = key
+        if key == "corridor_status":
+            self._attr_device_class = SensorDeviceClass.ENUM
+            self._attr_options = [status.value for status in SegmentStatus]
+            self._unrecorded_attributes = frozenset({"segments"})
+        elif key == "corridor_min_speed":
+            self._attr_native_unit_of_measurement = UnitOfSpeed.KILOMETERS_PER_HOUR
+            self._attr_state_class = SensorStateClass.MEASUREMENT
+        else:
+            self._attr_state_class = SensorStateClass.MEASUREMENT
+
+    @property
+    def native_value(self) -> StateType:
+        """Return the aggregated value."""
+        if self._key == "corridor_status":
+            return self.worst_status()
+        if self._key == "corridor_min_speed":
+            speeds = [
+                segment.speed_kmh
+                for segment in self.corridor()
+                if segment.speed_kmh is not None
+            ]
+            return min(speeds) if speeds else None
+        return sum(
+            1
+            for segment in self.corridor()
+            if segment.status in DISRUPTED_SEGMENT_STATUSES
+        )
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Per-segment details on the status sensor."""
+        if self._key != "corridor_status":
+            return None
+        return {"segments": self.segment_summary()}

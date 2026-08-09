@@ -39,37 +39,6 @@ def segment_direction(segment: TrafficSegment) -> str:
     return _COMPASS[round(bearing / 45) % 8]
 
 
-def point_to_segment_m(
-    latitude: float, longitude: float, segment: TrafficSegment
-) -> float:
-    """Distance from a point to the segment polyline in meters.
-
-    Planar approximation (fine at city scale): distances are computed
-    against every polyline edge, not just the support points — long
-    segments with sparse points would otherwise rank wrongly.
-    """
-    lat_scale = 111_320.0
-    lon_scale = 111_320.0 * math.cos(math.radians(latitude))
-
-    def to_xy(lat: float, lon: float) -> tuple[float, float]:
-        return ((lon - longitude) * lon_scale, (lat - latitude) * lat_scale)
-
-    best = float("inf")
-    points = [to_xy(lat, lon) for lat, lon in segment.points]
-    for (x1, y1), (x2, y2) in pairwise(points):
-        dx, dy = x2 - x1, y2 - y1
-        length_sq = dx * dx + dy * dy
-        if length_sq == 0:
-            dist = math.hypot(x1, y1)
-        else:
-            t = max(0.0, min(1.0, -(x1 * dx + y1 * dy) / length_sq))
-            dist = math.hypot(x1 + t * dx, y1 + t * dy)
-        best = min(best, dist)
-    if len(points) == 1:
-        best = math.hypot(*points[0])
-    return best
-
-
 def segment_length_km(segment: TrafficSegment) -> float:
     """Approximate polyline length in kilometers (planar, city scale)."""
     total = 0.0
@@ -100,3 +69,42 @@ class SegmentNameCache:
             self._names = await self._store.async_load() or {}
         self._names[segment_id] = name
         await self._store.async_save(dict(self._names))
+
+
+def corridor_segments(
+    segments: dict[str, TrafficSegment],
+    start: tuple[float, float],
+    dest: tuple[float, float],
+    width_m: float,
+) -> list[tuple[TrafficSegment, float]]:
+    """Segments within a corridor around the start->destination line.
+
+    Returns (segment, position) pairs ordered by position along the line
+    (0 = start, 1 = destination). Planar approximation, city scale.
+    """
+    lat_scale = 111_320.0
+    lon_scale = 111_320.0 * math.cos(math.radians(start[0]))
+
+    def to_xy(lat: float, lon: float) -> tuple[float, float]:
+        return ((lon - start[1]) * lon_scale, (lat - start[0]) * lat_scale)
+
+    dx, dy = to_xy(*dest)
+    length_sq = dx * dx + dy * dy
+    if length_sq == 0:
+        return []
+
+    result: list[tuple[TrafficSegment, float]] = []
+    for segment in segments.values():
+        best_dist = float("inf")
+        best_pos = 0.0
+        for lat, lon in segment.points:
+            px, py = to_xy(lat, lon)
+            t = max(0.0, min(1.0, (px * dx + py * dy) / length_sq))
+            dist = math.hypot(px - t * dx, py - t * dy)
+            if dist < best_dist:
+                best_dist = dist
+                best_pos = t
+        if best_dist <= width_m:
+            result.append((segment, best_pos))
+    result.sort(key=lambda item: item[1])
+    return result

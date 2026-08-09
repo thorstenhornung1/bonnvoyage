@@ -169,42 +169,59 @@
     },
     "segment": {
       "initiate_flow": {
-        "user": "Watch city route"
+        "user": "Watch city corridor"
       },
-      "entry_type": "City route",
+      "entry_type": "City corridor",
       "step": {
-        "user": {
-          "title": "Watch city route – show location (1/3)",
-          "description": "The city of Bonn measures live traffic on 111 main road segments. Put the marker on the street you care about – the next step shows the measured segments nearby and you pick one explicitly. Tip: the city's own traffic map at {stadtplan_url} shows which streets are measured. To display street names, only the coordinates of the city's measurement segments are sent to an OpenStreetMap service – never your picked point.",
+        "start": {
+          "title": "Watch city corridor – start (1/3)",
+          "description": "Where does your route begin? Choose one of your zones or pick a point on the map in the next step. All measured segments along the corridor between start and destination are then offered for selection.",
           "data": {
-            "location": "Point on your route"
-          },
-          "data_description": {
-            "location": "Rough aiming is fine: every measured segment within 2 km is offered for selection."
+            "start": "Starting point"
           }
         },
-        "select": {
-          "title": "Pick a segment (2/3)",
-          "description": "These measured segments are close to your point, sorted by distance. Direction = driving direction of the segment (compass).{geocoder_note}",
+        "start_map": {
+          "title": "Pick the start on the map (1/3)",
+          "description": "Move the marker to the start of your route.",
           "data": {
-            "segment_id": "Segment"
+            "location": "Starting point"
+          }
+        },
+        "dest": {
+          "title": "Destination (2/3)",
+          "description": "Where does your route go? Choose a zone or pick a point on the map in the next step.",
+          "data": {
+            "destination": "Destination"
+          }
+        },
+        "dest_map": {
+          "title": "Pick the destination on the map (2/3)",
+          "description": "Move the marker to the destination of your route.",
+          "data": {
+            "location": "Destination"
+          }
+        },
+        "segments": {
+          "title": "Segments along the corridor (3/3)",
+          "description": "These measured segments lie along your corridor, ordered from start to destination — all are preselected, just uncheck what you do not need. Street names come from OpenStreetMap; only segment midpoints are geocoded, never your points.{geocoder_note}",
+          "data": {
+            "segment_ids": "Segments"
           }
         },
         "name": {
-          "title": "Set a name (3/3)",
-          "description": "Selected: {segment_label}. The device and its sensors (traffic status, speed, congestion) appear under this name.",
+          "title": "Set a name",
+          "description": "The corridor appears as one device with aggregated sensors: worst traffic status, slowest segment and a congestion alert.",
           "data": {
             "name": "Name"
           },
           "data_description": {
-            "name": "Adjust the suggestion if you like, e.g. \"Adenauerallee inbound\"."
+            "name": "For example \"Commute south (city)\"."
           }
         }
       },
       "error": {
-        "no_segment_nearby": "No measured segment within 2 km of the chosen point. The city only measures selected main roads – the city traffic map (link above) shows which.",
-        "already_configured": "This segment is already being watched. Pick another one or reposition the point.",
-        "name_exists": "A city route with this name already exists. Choose a different name."
+        "no_segments_on_corridor": "No measured segment lies along this corridor (about 800 m width). The city only measures selected main roads – try endpoints closer to a main road.",
+        "name_exists": "A city corridor with this name already exists. Choose a different name."
       },
       "abort": {
         "segments_unavailable": "The city traffic layer is currently unreachable. Please try again later."
@@ -314,6 +331,22 @@
       },
       "max_delay": {
         "name": "Largest delay"
+      },
+      "corridor_status": {
+        "name": "Traffic situation",
+        "state": {
+          "normal": "Normal",
+          "elevated": "Elevated",
+          "congestion_risk": "Congestion risk",
+          "congested": "Congested",
+          "unknown": "Not measurable"
+        }
+      },
+      "corridor_min_speed": {
+        "name": "Slowest segment"
+      },
+      "corridor_disrupted": {
+        "name": "Disrupted segments"
       }
     },
     "binary_sensor": {
@@ -331,6 +364,9 @@
       },
       "stop_delay": {
         "name": "Delay"
+      },
+      "corridor_congestion": {
+        "name": "Congestion"
       }
     },
     "event": {

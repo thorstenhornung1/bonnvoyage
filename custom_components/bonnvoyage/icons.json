@@ -36,6 +36,15 @@
       },
       "max_delay": {
         "default": "mdi:clock-alert-outline"
+      },
+      "corridor_status": {
+        "default": "mdi:traffic-light"
+      },
+      "corridor_min_speed": {
+        "default": "mdi:speedometer-slow"
+      },
+      "corridor_disrupted": {
+        "default": "mdi:car-brake-alert"
       }
     },
     "binary_sensor": {
@@ -56,6 +65,9 @@
       },
       "stop_delay": {
         "default": "mdi:bus-alert"
+      },
+      "corridor_congestion": {
+        "default": "mdi:car-brake-alert"
       }
     },
     "event": {

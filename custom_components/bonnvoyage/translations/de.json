@@ -173,37 +173,54 @@
       },
       "entry_type": "Stadtstrecke",
       "step": {
-        "user": {
-          "title": "Stadtstrecke beobachten – Ort zeigen (1/3)",
-          "description": "Die Stadt Bonn misst die Verkehrslage live auf 111 Hauptstraßen-Abschnitten. Setze die Markierung auf die Straße, die dich interessiert – im nächsten Schritt siehst du die gemessenen Abschnitte in der Nähe und wählst einen explizit aus. Tipp: Welche Straßen gemessen werden, zeigt die Verkehrslage-Karte der Stadt auf {stadtplan_url}. Zur Anzeige von Straßennamen werden nur die Koordinaten der städtischen Messabschnitte an einen OpenStreetMap-Dienst übertragen – nie dein gewählter Punkt.",
+        "start": {
+          "title": "Stadtstrecke beobachten – Start (1/3)",
+          "description": "Wo beginnt deine Strecke? Wähle eine deiner Zonen oder setze im nächsten Schritt einen Punkt auf der Karte. Danach werden dir alle gemessenen Abschnitte entlang des Korridors zwischen Start und Ziel zur Auswahl angeboten.",
           "data": {
-            "location": "Punkt auf deiner Strecke"
-          },
-          "data_description": {
-            "location": "Grobes Zielen genügt: Alle gemessenen Abschnitte im Umkreis von 2 km werden dir zur Auswahl angeboten."
+            "start": "Startpunkt"
           }
         },
-        "select": {
-          "title": "Abschnitt auswählen (2/3)",
-          "description": "Diese gemessenen Abschnitte liegen in der Nähe deines Punkts, sortiert nach Entfernung. Richtung = Fahrtrichtung des Abschnitts (Kompass).{geocoder_note}",
+        "start_map": {
+          "title": "Start auf der Karte wählen (1/3)",
+          "description": "Verschiebe die Markierung an den Start deiner Strecke.",
           "data": {
-            "segment_id": "Abschnitt"
+            "location": "Startpunkt"
+          }
+        },
+        "dest": {
+          "title": "Ziel (2/3)",
+          "description": "Wohin führt deine Strecke? Wähle eine Zone oder setze im nächsten Schritt einen Punkt auf der Karte.",
+          "data": {
+            "destination": "Zielpunkt"
+          }
+        },
+        "dest_map": {
+          "title": "Ziel auf der Karte wählen (2/3)",
+          "description": "Verschiebe die Markierung an das Ziel deiner Strecke.",
+          "data": {
+            "location": "Zielpunkt"
+          }
+        },
+        "segments": {
+          "title": "Abschnitte entlang der Strecke (3/3)",
+          "description": "Diese gemessenen Abschnitte liegen entlang deines Korridors, sortiert von Start nach Ziel — alle sind vorausgewählt, wähle einfach ab, was du nicht brauchst. Straßennamen kommen aus OpenStreetMap; geocodiert werden nur Abschnitts-Mittelpunkte, nie deine Punkte.{geocoder_note}",
+          "data": {
+            "segment_ids": "Abschnitte"
           }
         },
         "name": {
-          "title": "Name festlegen (3/3)",
-          "description": "Gewählt: {segment_label}. Unter diesem Namen erscheinen das Gerät und seine Sensoren (Verkehrsstatus, Geschwindigkeit, Stau).",
+          "title": "Name festlegen",
+          "description": "Die Strecke erscheint als ein Gerät mit zusammengefassten Sensoren: schlechtester Verkehrsstatus, langsamster Abschnitt und Stau-Alarm.",
           "data": {
             "name": "Name"
           },
           "data_description": {
-            "name": "Passe den Vorschlag gern an, z. B. „Adenauerallee stadteinwärts“."
+            "name": "Zum Beispiel „Pendelweg Süd (Stadt)“."
           }
         }
       },
       "error": {
-        "no_segment_nearby": "Im Umkreis von 2 km um den Punkt wird kein Abschnitt gemessen. Die Stadt misst nur ausgewählte Hauptstraßen – die Verkehrslage-Karte der Stadt (Link oben) zeigt, welche.",
-        "already_configured": "Dieser Abschnitt wird bereits beobachtet. Wähle einen anderen oder setze den Punkt neu.",
+        "no_segments_on_corridor": "Entlang dieses Korridors (ca. 800 m Breite) wird kein Abschnitt gemessen. Die Stadt misst nur ausgewählte Hauptstraßen – wähle Start/Ziel näher an einer Hauptstraße.",
         "name_exists": "Eine Stadtstrecke mit diesem Namen existiert bereits. Wähle einen anderen Namen."
       },
       "abort": {
@@ -314,6 +331,22 @@
       },
       "max_delay": {
         "name": "Größte Verspätung"
+      },
+      "corridor_status": {
+        "name": "Verkehrslage",
+        "state": {
+          "normal": "Normal",
+          "elevated": "Erhöht",
+          "congestion_risk": "Staugefahr",
+          "congested": "Stau",
+          "unknown": "Nicht ermittelbar"
+        }
+      },
+      "corridor_min_speed": {
+        "name": "Langsamster Abschnitt"
+      },
+      "corridor_disrupted": {
+        "name": "Gestörte Abschnitte"
       }
     },
     "binary_sensor": {
@@ -331,6 +364,9 @@
       },
       "stop_delay": {
         "name": "Verspätung"
+      },
+      "corridor_congestion": {
+        "name": "Stau"
       }
     },
     "event": {
