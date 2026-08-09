@@ -65,4 +65,4 @@ bonnvoyage/
 
 ## Lizenz
 
-MIT (geplant)
+MIT — siehe [LICENSE](LICENSE)

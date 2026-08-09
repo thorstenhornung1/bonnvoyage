@@ -59,3 +59,5 @@ jobs:
       - uses: hacs/action@main
         with:
           category: integration
+          # brands requires a PR to home-assistant/brands (tracked for M4)
+          ignore: brands
