@@ -182,3 +182,6 @@ CONF_DIRECTION: Final = "direction"
 CONF_SEGMENT_IDS: Final = "segment_ids"
 CONF_SEGMENT_META: Final = "segment_meta"
 CORRIDOR_WIDTH_M: Final = 800
+CORRIDOR_WIDTH_MIN_M: Final = 200
+CORRIDOR_WIDTH_MAX_M: Final = 3_000
+CONF_CORRIDOR_WIDTH: Final = "corridor_width"

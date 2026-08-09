@@ -60,6 +60,7 @@ from .const import (
     CONF_ADD_VIA,
     CONF_API_KEY,
     CONF_AREA,
+    CONF_CORRIDOR_WIDTH,
     CONF_DELAY_ALERT_THRESHOLD,
     CONF_DELAY_THRESHOLD,
     CONF_DESTINATION,
@@ -77,6 +78,8 @@ from .const import (
     CONF_STREET_NAME,
     CONF_VIA,
     CORRIDOR_WIDTH_M,
+    CORRIDOR_WIDTH_MAX_M,
+    CORRIDOR_WIDTH_MIN_M,
     DEFAULT_DELAY_ALERT_MIN,
     DEFAULT_DELAY_THRESHOLD_MIN,
     DEFAULT_RADIUS_M,
@@ -795,6 +798,8 @@ class SegmentSubentryFlowHandler(ConfigSubentryFlow):
         self._destination_label = ""
         self._candidates: list[CorridorCandidate] = []
         self._geocoder_failed = False
+        self._width = CORRIDOR_WIDTH_M
+        self._deselected: set[str] = set()
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -903,7 +908,7 @@ class SegmentSubentryFlowHandler(ConfigSubentryFlow):
             self._segments,
             (self._start.latitude, self._start.longitude),
             (self._destination.latitude, self._destination.longitude),
-            CORRIDOR_WIDTH_M,
+            self._width,
         )
         if not along:
             return self.async_show_form(
@@ -954,8 +959,20 @@ class SegmentSubentryFlowHandler(ConfigSubentryFlow):
     async def async_step_segments(
         self, user_input: dict[str, Any] | None = None
     ) -> SubentryFlowResult:
-        """Multi-select the corridor segments (all preselected)."""
+        """Multi-select the corridor segments; a width change reloads the list.
+
+        The corridor is a straight line between start and destination — for
+        curved commutes widening the corridor catches the streets on the bend
+        (dialogs cannot re-render live, so changing width + OK reloads).
+        """
         if user_input is not None:
+            selected = set(user_input[CONF_SEGMENT_IDS])
+            shown = {candidate.segment.segment_id for candidate in self._candidates}
+            self._deselected = shown - selected
+            new_width = int(user_input[CONF_CORRIDOR_WIDTH])
+            if new_width != self._width:
+                self._width = new_width
+                return await self._async_build_candidates()
             self._selected = user_input[CONF_SEGMENT_IDS]
             return await self.async_step_name()
 
@@ -965,20 +982,34 @@ class SegmentSubentryFlowHandler(ConfigSubentryFlow):
             )
             for candidate in self._candidates
         ]
+        preselected = [
+            option["value"]
+            for option in options
+            if option["value"] not in self._deselected
+        ]
         return self.async_show_form(
             step_id="segments",
             data_schema=vol.Schema(
                 {
-                    vol.Required(
-                        CONF_SEGMENT_IDS,
-                        default=[option["value"] for option in options],
-                    ): SelectSelector(
+                    vol.Required(CONF_SEGMENT_IDS, default=preselected): SelectSelector(
                         SelectSelectorConfig(
                             options=options,
                             multiple=True,
                             mode=SelectSelectorMode.LIST,
                         )
-                    )
+                    ),
+                    vol.Required(CONF_CORRIDOR_WIDTH, default=self._width): vol.All(
+                        NumberSelector(
+                            NumberSelectorConfig(
+                                min=CORRIDOR_WIDTH_MIN_M,
+                                max=CORRIDOR_WIDTH_MAX_M,
+                                step=100,
+                                unit_of_measurement="m",
+                                mode=NumberSelectorMode.SLIDER,
+                            )
+                        ),
+                        vol.Coerce(int),
+                    ),
                 }
             ),
             description_placeholders={

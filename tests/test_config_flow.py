@@ -970,3 +970,55 @@ async def test_segment_corridor_zone_destination(
     )
     defaults = result["data_schema"]({})
     assert defaults["name"] == "Zuhause → Arbeit (Stadt)"
+
+
+async def test_segment_corridor_width_slider(
+    hass: HomeAssistant, aioclient_mock
+) -> None:
+    """Changing the width reloads the candidate list, keeping deselections."""
+    aioclient_mock.get("https://nominatim.openstreetmap.org/reverse", status=503)
+    _set_home_zone(hass)
+    entry = mock_config_entry()
+    entry.add_to_hass(hass)
+
+    result = await hass.config_entries.subentries.async_init(
+        (entry.entry_id, SUBENTRY_TYPE_SEGMENT), context={"source": "user"}
+    )
+    result = await hass.config_entries.subentries.async_configure(
+        result["flow_id"], {CONF_START: "zone.home"}
+    )
+    result = await hass.config_entries.subentries.async_configure(
+        result["flow_id"], {CONF_DESTINATION: PICK_ON_MAP}
+    )
+    result = await hass.config_entries.subentries.async_configure(
+        result["flow_id"], {CONF_LOCATION: {"latitude": 50.7443, "longitude": 7.0907}}
+    )
+    assert result["step_id"] == "segments"
+    options = result["data_schema"].schema["segment_ids"].config["options"]
+    narrow_values = {option["value"] for option in options}
+    kept = options[0]["value"]
+    dropped = options[1]["value"] if len(options) > 1 else None
+
+    # Widen the corridor: the form reloads with more candidates
+    result = await hass.config_entries.subentries.async_configure(
+        result["flow_id"],
+        {"segment_ids": [kept], "corridor_width": 3000},
+    )
+    assert result["step_id"] == "segments"  # reloaded, not advanced
+    options = result["data_schema"].schema["segment_ids"].config["options"]
+    wide_values = {option["value"] for option in options}
+    assert narrow_values < wide_values  # strictly more candidates
+
+    # Deselections survive the reload; new candidates are preselected
+    defaults = result["data_schema"]({"corridor_width": 3000})
+    assert kept in defaults["segment_ids"]
+    if dropped is not None:
+        assert dropped not in defaults["segment_ids"]
+    assert wide_values - narrow_values <= set(defaults["segment_ids"])
+
+    # Unchanged width continues to the name step
+    result = await hass.config_entries.subentries.async_configure(
+        result["flow_id"],
+        {"segment_ids": [kept], "corridor_width": 3000},
+    )
+    assert result["step_id"] == "name"

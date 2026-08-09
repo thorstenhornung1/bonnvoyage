@@ -203,9 +203,13 @@
         },
         "segments": {
           "title": "Segments along the corridor (3/3)",
-          "description": "These measured segments lie along your corridor, ordered from start to destination — all are preselected, just uncheck what you do not need. Street names come from OpenStreetMap; only segment midpoints are geocoded, never your points.{geocoder_note}",
+          "description": "These measured segments lie along your corridor (a straight line between start and destination), ordered from start to destination — all are preselected, just uncheck what you do not need. Your commute takes a bend and a street is missing? Widen the corridor with the slider and press OK: the list reloads with your choices preserved. Street names come from OpenStreetMap; only segment midpoints are geocoded.{geocoder_note}",
           "data": {
-            "segment_ids": "Segments"
+            "segment_ids": "Segments",
+            "corridor_width": "Corridor width"
+          },
+          "data_description": {
+            "corridor_width": "Search band around the straight line. Changing it reloads the list instead of continuing."
           }
         },
         "name": {

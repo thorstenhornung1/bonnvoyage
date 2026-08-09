@@ -203,9 +203,13 @@
         },
         "segments": {
           "title": "Abschnitte entlang der Strecke (3/3)",
-          "description": "Diese gemessenen Abschnitte liegen entlang deines Korridors, sortiert von Start nach Ziel — alle sind vorausgewählt, wähle einfach ab, was du nicht brauchst. Straßennamen kommen aus OpenStreetMap; geocodiert werden nur Abschnitts-Mittelpunkte, nie deine Punkte.{geocoder_note}",
+          "description": "Diese gemessenen Abschnitte liegen entlang deines Korridors (Luftlinie zwischen Start und Ziel), sortiert von Start nach Ziel — alle sind vorausgewählt, wähle einfach ab, was du nicht brauchst. Dein Weg macht einen Bogen und eine Straße fehlt? Verbreitere den Korridor mit dem Regler und drücke OK: Die Liste lädt neu, deine Auswahl bleibt erhalten. Straßennamen kommen aus OpenStreetMap; geocodiert werden nur Abschnitts-Mittelpunkte.{geocoder_note}",
           "data": {
-            "segment_ids": "Abschnitte"
+            "segment_ids": "Abschnitte",
+            "corridor_width": "Korridorbreite"
+          },
+          "data_description": {
+            "corridor_width": "Suchband um die Luftlinie. Eine Änderung lädt die Liste neu, statt fortzufahren."
           }
         },
         "name": {
