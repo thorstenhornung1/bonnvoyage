@@ -52,8 +52,11 @@ ein sichtbares Ergebnis:
 Danach lassen sich auf der Integrationsseite jederzeit hinzufügen:
 
 - **Parkhaus hinzufügen** — weiteres Parkhaus aus der Live-Liste
-- **Stadtstrecke beobachten** — Punkt auf der Karte wählen; der nächstgelegene
-  gemessene Straßenabschnitt (max. 2 km entfernt) wird als eigenes Gerät beobachtet
+- **Stadtstrecke beobachten** — Punkt grob auf die Straße setzen; die
+  Integration zeigt die gemessenen Abschnitte in der Nähe **mit Straßennamen**
+  (via OpenStreetMap/Nominatim, ohne Key), Fahrtrichtung, Entfernung, Länge und
+  Live-Status — du bestätigst explizit und benennst das Gerät (vorbefüllt).
+  Einmal aufgelöste Namen werden dauerhaft gecached.
 - **Strecke hinzufügen** — 3-Schritte-Assistent: Start (Zone oder Karte) → Ziel →
   Name + Stau-Schwelle (Default 10 min); optional ein Zwischenpunkt. Beim Speichern
   wird eine Proberoute gerechnet, damit keine toten Sensoren entstehen.
@@ -164,8 +167,10 @@ automation:
   schließe die Strecken-Sensoren per
   [`recorder`-Konfiguration](https://www.home-assistant.io/integrations/recorder/#exclude)
   aus oder kläre es mit dem TomTom-Support.
-- **Stadt-Verkehrslage**: Die 111 Segmente tragen keine Namen — die Auswahl
-  läuft über den Karten-Punkt. Nur ausgewählte Hauptstraßen werden gemessen.
+- **Stadt-Verkehrslage**: Nur ausgewählte Hauptstraßen werden gemessen
+  (111 Abschnitte, median ~1 km lang); welche, zeigt die Verkehrslage-Karte
+  auf stadtplan.bonn.de. Straßennamen kommen aus OpenStreetMap — bei
+  Geocoder-Ausfall heißen Abschnitte übergangsweise „Abschnitt #N“.
 - Der BCP-Feed führt einzelne tote Einträge (z. B. „karstadt", eingefroren
   seit 2018) — sie werden automatisch ausgeblendet.
 - **transitous.org** ist ein community-betriebener Dienst ohne
@@ -200,6 +205,7 @@ Config-Eintrag gelöscht). Anschließend ggf. das HACS-Repository deinstallieren
 | Autobahn-API (bund.dev) | GovData-Portal | „Autobahn GmbH des Bundes" |
 | TomTom Routing | TomTom-ToS (eigener Key) | „© TomTom" |
 | ÖPNV-Abfahrten | transitous.org (Community, Fair Use) / DELFI | „transitous.org (DELFI)“ |
+| Straßennamen der Messabschnitte | OSM Nominatim (Fair Use, nur Segment-Mittelpunkte, dauerhaft gecached) | ODbL/OSM |
 
 **Hinweis zur BCP-Lizenz (NC)**: Die Parkhausdaten sind nur für
 nicht-kommerzielle Nutzung frei — für den privaten Smart-Home-Einsatz
