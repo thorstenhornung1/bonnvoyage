@@ -1,0 +1,20 @@
+{
+  "domain": "bonnvoyage",
+  "name": "BonnVoyage",
+  "codeowners": [
+    "@thorstenhornung1"
+  ],
+  "config_flow": true,
+  "documentation": "https://github.com/thorstenhornung1/bonnvoyage",
+  "integration_type": "hub",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/thorstenhornung1/bonnvoyage/issues",
+  "loggers": [
+    "custom_components.bonnvoyage"
+  ],
+  "requirements": [
+    "defusedxml==0.7.1"
+  ],
+  "single_config_entry": true,
+  "version": "0.3.0"
+}

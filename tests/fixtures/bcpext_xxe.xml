@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE parkhaeuser [
+  <!ENTITY xxe SYSTEM "file:///etc/passwd">
+]>
+<parkhaeuser>
+  <parkhaus>
+    <lfdnr>1</lfdnr>
+    <bezeichnung>&xxe;</bezeichnung>
+    <gesamt>287</gesamt>
+    <frei>251</frei>
+    <status>0</status>
+    <zeitstempel>09.08.2026 07:15</zeitstempel>
+    <tendenz>3</tendenz>
+  </parkhaus>
+</parkhaeuser>

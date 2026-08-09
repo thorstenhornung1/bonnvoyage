@@ -1,0 +1,18 @@
+{
+  "formatVersion": "0.0.12",
+  "routes": [
+    {
+      "summary": {
+        "lengthInMeters": 24310,
+        "travelTimeInSeconds": 1685,
+        "trafficDelayInSeconds": 312,
+        "trafficLengthInMeters": 4820,
+        "departureTime": "2026-08-09T07:42:00+02:00",
+        "arrivalTime": "2026-08-09T08:10:05+02:00",
+        "noTrafficTravelTimeInSeconds": 1290,
+        "historicTrafficTravelTimeInSeconds": 1512,
+        "liveTrafficIncidentsTravelTimeInSeconds": 1685
+      }
+    }
+  ]
+}

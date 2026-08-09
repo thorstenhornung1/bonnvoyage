@@ -1,0 +1,218 @@
+{
+ "roadworks": [
+  {
+   "identifier": "2023-000240--vi-bs.2025-10-16_05-00-00-000.devi-zus.2024-12-14_09-00-00-000.f.de66",
+   "icon": "123",
+   "isBlocked": "false",
+   "future": false,
+   "extent": "50.70192818915608,7.065070099781347,50.7086694846357,7.061258487521229",
+   "point": "50.70192818915608,7.065070099781347",
+   "startLcPosition": "4",
+   "impact": {
+    "lower": "Bonn-Lengsdorf",
+    "upper": "Meckenheim-Nord",
+    "symbols": [
+     "SEPARATE",
+     "ARROW_UP",
+     "ARROW_UP",
+     "BORDER_RIGHT",
+     "CLOSED"
+    ]
+   },
+   "display_type": "ROADWORKS",
+   "subtitle": " Meckenheim -> Bonn",
+   "title": "A565 | Meckenheim-Nord - Bonn-Lengsdorf",
+   "startTimestamp": "2025-10-16T05:00:00+02:00",
+   "coordinate": {
+    "lat": 50.70192818915608,
+    "long": 7.065070099781347
+   },
+   "description": [
+    "Zeitraum dieser Bauphase:",
+    "Beginn: 16.10.25 um 05:00 Uhr",
+    "Ende: 18.09.27 um 15:00 Uhr",
+    "(Ende der Gesamtmaßnahme: 18.09.27)",
+    "",
+    "A565: Meckenheim -> Bonn, zwischen 6.3 km hinter AS Meckenheim-Nord und 1.0 km vor AS Bonn-Lengsdorf",
+    "",
+    "Länge: 0.8 km | Maximale Durchfahrtsbreite: 6.75 m",
+    "",
+    "BW Villemombler Str."
+   ],
+   "routeRecommendation": [],
+   "footer": [],
+   "lorryParkingFeatureIcons": [],
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      7.0650701,
+      50.701928189
+     ],
+     [
+      7.064902,
+      50.702354001
+     ],
+     [
+      7.064609,
+      50.702934801
+     ],
+     [
+      7.0641762,
+      50.703631501
+     ],
+     [
+      7.0638746,
+      50.704057001
+     ],
+     [
+      7.0626658,
+      50.705641201
+     ],
+     [
+      7.0623629,
+      50.706067601
+     ],
+     [
+      7.0621442,
+      50.706418301
+     ],
+     [
+      7.0618634,
+      50.706880101
+     ],
+     [
+      7.0617399,
+      50.707108701
+     ],
+     [
+      7.0615992,
+      50.707387701
+     ],
+     [
+      7.0614566,
+      50.707792401
+     ],
+     [
+      7.0613306,
+      50.708188101
+     ],
+     [
+      7.0612586,
+      50.708666701
+     ],
+     [
+      7.061258488,
+      50.708669485
+     ]
+    ]
+   }
+  },
+  {
+   "identifier": "2023-000240--vi-bs.2025-10-16_05-00-00-000.devi-zus.2024-12-14_09-00-00-000.f.de64",
+   "icon": "123",
+   "isBlocked": "false",
+   "future": false,
+   "extent": "50.7086964041854,7.061257399828373,50.713846398421026,7.0639041497337445",
+   "point": "50.7086964041854,7.061257399828373",
+   "startLcPosition": "5",
+   "impact": {
+    "lower": "Bonn-Lengsdorf",
+    "upper": "Bonn-Hardtberg",
+    "symbols": [
+     "ARROW_DOWN",
+     "BORDER_LEFT",
+     "ARROW_DOWN",
+     "SEPARATE",
+     "ARROW_UP",
+     "ARROW_UP",
+     "SEPARATE",
+     "CLOSED",
+     "CLOSED",
+     "BORDER_RIGHT",
+     "CLOSED"
+    ]
+   },
+   "display_type": "ROADWORKS",
+   "subtitle": " Meckenheim -> Bonn",
+   "title": "A565 | Bonn-Hardtberg - Bonn-Lengsdorf",
+   "startTimestamp": "2025-10-16T05:00:00+02:00",
+   "coordinate": {
+    "lat": 50.7086964041854,
+    "long": 7.061257399828373
+   },
+   "description": [
+    "Zeitraum dieser Bauphase:",
+    "Beginn: 16.10.25 um 05:00 Uhr",
+    "Ende: 18.09.27 um 15:00 Uhr",
+    "(Ende der Gesamtmaßnahme: 18.09.27)",
+    "",
+    "A565: Meckenheim -> Bonn, zwischen 0.5 km hinter AS Bonn-Hardtberg und 0.4 km vor AS Bonn-Lengsdorf",
+    "",
+    "Länge: 0.62 km | Maximale Durchfahrtsbreite: 6.25 m",
+    "",
+    "BW Villemombler Str."
+   ],
+   "routeRecommendation": [],
+   "footer": [],
+   "lorryParkingFeatureIcons": [],
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      7.0612574,
+      50.708696404
+     ],
+     [
+      7.0612367,
+      50.709208701
+     ],
+     [
+      7.0612664,
+      50.709638701
+     ],
+     [
+      7.0613339,
+      50.710000701
+     ],
+     [
+      7.0614238,
+      50.710365001
+     ],
+     [
+      7.0615408,
+      50.710687701
+     ],
+     [
+      7.0617986,
+      50.711266701
+     ],
+     [
+      7.0619708,
+      50.711556701
+     ],
+     [
+      7.0622979,
+      50.712063101
+     ],
+     [
+      7.0627325,
+      50.712606701
+     ],
+     [
+      7.0631761,
+      50.713130001
+     ],
+     [
+      7.0636786,
+      50.713636501
+     ],
+     [
+      7.06390415,
+      50.713846398
+     ]
+    ]
+   }
+  }
+ ]
+}

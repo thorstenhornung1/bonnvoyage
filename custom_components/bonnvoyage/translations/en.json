@@ -1,0 +1,283 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up BonnVoyage",
+        "description": "Parking occupancy, roadworks, live traffic and messages for Bonn – no account, no API key. First choose the area in which roadworks, traffic messages and congestion should appear.",
+        "data": {
+          "area": "Area for traffic messages"
+        },
+        "data_description": {
+          "area": "Move the marker and adjust the circle. The default is your home with a 10 km radius – covering the city and the A555, A559 and A565 motorways."
+        }
+      },
+      "parking": {
+        "title": "Select parking facilities",
+        "description": "Live occupancy of Bonn's parking facilities. The list is sorted by distance from your home; facilities within 3 km are preselected – just adjust the selection. You can add or remove facilities at any time later.",
+        "data": {
+          "parkings": "Parking facilities"
+        },
+        "data_description": {
+          "parkings": "Each selected facility gets sensors for free spaces, occupancy, trend and open state – including its position for the map."
+        }
+      },
+      "parking_unavailable": {
+        "title": "Parking data unavailable",
+        "description": "The parking feed (BCP Bonn) is currently unreachable. You can retry or continue without parking facilities – they can be added at any time later.",
+        "menu_options": {
+          "parking": "Retry",
+          "routes_menu": "Continue without parking facilities"
+        }
+      },
+      "routes_menu": {
+        "title": "Routes with travel times?",
+        "description": "For live travel times and congestion alerts on your own routes (e.g. home → office) BonnVoyage uses an external routing service. This requires the provider's API key – the free tier covers about 2 routes polled around the clock (20,000 requests/month). Parking, city traffic and messages work without any key.",
+        "menu_options": {
+          "provider": "Set up a travel time provider now (API key required)",
+          "finish": "Finish without routes – can be added any time"
+        }
+      },
+      "provider": {
+        "title": "Travel time provider",
+        "description": "Choose a provider and enter your API key. You get a free key from the provider's developer portal. Privacy note: the coordinates of your configured routes are sent to the provider (rounded to ~11 m); nothing else leaves your home. The key is stored locally in Home Assistant.",
+        "data": {
+          "provider": "Provider",
+          "api_key": "API key"
+        },
+        "data_description": {
+          "api_key": "Validated with a test request when you continue."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Renew API key",
+        "description": "The travel time provider no longer accepts the stored API key for {name}. Enter a valid key to bring the route sensors back. Parking, city traffic and messages are not affected.",
+        "data": {
+          "api_key": "API key"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "The provider rejected the API key. Check that the key was copied completely and is enabled for the routing API.",
+      "cannot_connect": "The travel time provider is currently unreachable. This is not a problem with your key – check your internet connection and try again in a few minutes.",
+      "rate_limited": "The provider reports too many requests (quota reached). Wait a few minutes and try again.",
+      "unknown": "Unexpected error. See the Home Assistant log for details."
+    },
+    "abort": {
+      "single_instance_allowed": "BonnVoyage is already set up. Add routes and parking facilities via the existing integration.",
+      "reauth_successful": "The API key was updated successfully."
+    }
+  },
+  "config_subentries": {
+    "parking": {
+      "initiate_flow": {
+        "user": "Add parking facility"
+      },
+      "entry_type": "Parking facility",
+      "step": {
+        "user": {
+          "title": "Add parking facility",
+          "description": "The list is sorted by distance from your home. Facilities that are already configured are not shown.",
+          "data": {
+            "facility_id": "Parking facility"
+          }
+        }
+      },
+      "abort": {
+        "bcp_unavailable": "The parking feed (BCP Bonn) is currently unreachable. Please try again later.",
+        "all_configured": "All currently reported parking facilities are already configured.",
+        "no_parkings": "No parking facilities are currently being reported. This is usually a temporary problem of the BCP feed – please try again later."
+      }
+    },
+    "route": {
+      "initiate_flow": {
+        "user": "Add route"
+      },
+      "entry_type": "Route",
+      "step": {
+        "provider": {
+          "title": "Set up travel time provider",
+          "description": "Routes need an external routing service – this step is only required once. Your parking facilities, city traffic and messages keep working independently. You get a free API key from the provider's developer portal; route coordinates are sent to the provider (rounded).",
+          "data": {
+            "provider": "Provider",
+            "api_key": "API key"
+          },
+          "data_description": {
+            "api_key": "Validated with a test request when you continue."
+          }
+        },
+        "start": {
+          "title": "Add route – start (1/3)",
+          "description": "Where does the route begin? Choose one of your zones or pick a point on the map in the next step.",
+          "data": {
+            "start": "Starting point"
+          },
+          "data_description": {
+            "start": "Zones are the locations stored in Home Assistant, e.g. Home or Work."
+          }
+        },
+        "start_map": {
+          "title": "Pick the start on the map (1/3)",
+          "description": "Move the marker to the starting point. It should be on or near a drivable road.",
+          "data": {
+            "location": "Starting point"
+          }
+        },
+        "dest": {
+          "title": "Add route – destination (2/3)",
+          "description": "Where does the route go? Choose a zone or pick a point on the map in the next step.",
+          "data": {
+            "destination": "Destination"
+          }
+        },
+        "dest_map": {
+          "title": "Pick the destination on the map (2/3)",
+          "description": "Move the marker to the destination. It should be on or near a drivable road.",
+          "data": {
+            "location": "Destination"
+          }
+        },
+        "settings": {
+          "title": "Finish route (3/3)",
+          "description": "Almost done: check the name and set the congestion threshold. A probe route is calculated when you save.",
+          "data": {
+            "name": "Route name",
+            "delay_threshold": "Congestion alert from delay",
+            "add_via": "Set a via point"
+          },
+          "data_description": {
+            "name": "Used for the sensor names, e.g. \"Home → Office\".",
+            "delay_threshold": "The congestion sensor reports a problem once the delay compared to free flow reaches this value (minutes).",
+            "add_via": "Forces the route via an intermediate point, e.g. the A565. Not needed for most routes."
+          }
+        },
+        "via_map": {
+          "title": "Pick the via point on the map",
+          "description": "Move the marker to the point the route should pass through.",
+          "data": {
+            "location": "Via point"
+          }
+        }
+      },
+      "error": {
+        "invalid_auth": "The provider rejected the API key. Check that the key was copied completely and is enabled for the routing API.",
+        "cannot_connect": "The travel time provider is currently unreachable. Check your internet connection and try again in a few minutes.",
+        "rate_limited": "The provider reports too many requests (quota reached). Wait a few minutes and try again.",
+        "route_not_found": "No route could be calculated for the chosen points. Check that start and destination are on or near a drivable road and move the marker if needed.",
+        "points_too_close": "Start and destination are too close together. Choose two different places at least a few hundred meters apart.",
+        "name_exists": "A route with this name already exists. Choose a different name."
+      }
+    },
+    "segment": {
+      "initiate_flow": {
+        "user": "Watch city route"
+      },
+      "entry_type": "City route",
+      "step": {
+        "user": {
+          "title": "Watch city route",
+          "description": "The city of Bonn measures live traffic on 111 main road segments. Pick a point on your commute – the closest measured segment is watched with status and speed sensors.",
+          "data": {
+            "location": "Point on your route",
+            "name": "Name (optional)"
+          },
+          "data_description": {
+            "location": "Move the marker onto the street you care about.",
+            "name": "For example \"Adenauerallee northbound\". Leave empty for an automatic name."
+          }
+        }
+      },
+      "error": {
+        "no_segment_nearby": "No measured segment within 2 km of the chosen point. The city only measures selected main roads – pick a point closer to a main road.",
+        "already_configured": "The segment closest to this point is already being watched."
+      },
+      "abort": {
+        "segments_unavailable": "The city traffic layer is currently unreachable. Please try again later."
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "BonnVoyage options",
+        "description": "Adjust the area for roadworks, traffic messages and congestion. Routes, city routes and parking facilities are managed directly on the integration page.",
+        "data": {
+          "area": "Area for traffic messages"
+        },
+        "data_description": {
+          "area": "Center and radius in which roadworks, traffic warnings and congestion appear."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "free_spaces": {
+        "name": "Free spaces"
+      },
+      "occupancy": {
+        "name": "Occupancy"
+      },
+      "trend": {
+        "name": "Trend",
+        "state": {
+          "filling": "Filling up",
+          "steady": "Steady",
+          "emptying": "Emptying"
+        }
+      },
+      "active_messages": {
+        "name": "Active messages"
+      },
+      "disrupted_segments": {
+        "name": "Disrupted segments"
+      },
+      "segment_status": {
+        "name": "Traffic status",
+        "state": {
+          "normal": "Normal",
+          "elevated": "Elevated",
+          "congestion_risk": "Congestion risk",
+          "congested": "Congested",
+          "unknown": "Not measurable"
+        }
+      },
+      "segment_speed": {
+        "name": "Speed"
+      },
+      "travel_time": {
+        "name": "Travel time"
+      },
+      "delay": {
+        "name": "Delay"
+      },
+      "traffic_level": {
+        "name": "Traffic level",
+        "state": {
+          "free_flow": "Free flow",
+          "heavy": "Heavy",
+          "queuing": "Queuing",
+          "congested": "Congested"
+        }
+      }
+    },
+    "binary_sensor": {
+      "open": {
+        "name": "Open"
+      },
+      "full": {
+        "name": "Full"
+      },
+      "segment_congestion": {
+        "name": "Congestion"
+      },
+      "route_congestion": {
+        "name": "Congestion"
+      }
+    },
+    "event": {
+      "new_message": {
+        "name": "New traffic message"
+      }
+    }
+  }
+}

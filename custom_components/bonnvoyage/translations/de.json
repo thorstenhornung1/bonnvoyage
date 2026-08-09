@@ -1,0 +1,283 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "BonnVoyage einrichten",
+        "description": "Parkhaus-Belegung, Baustellen, Live-Verkehrslage und Meldungen für Bonn – ohne Anmeldung und ohne API-Schlüssel. Lege zuerst fest, für welchen Bereich Baustellen, Meldungen und Verkehrsstörungen erscheinen sollen.",
+        "data": {
+          "area": "Bereich für Meldungen"
+        },
+        "data_description": {
+          "area": "Verschiebe die Markierung und ziehe den Kreis auf. Voreingestellt ist dein Zuhause mit 10 km Radius – das deckt das Stadtgebiet und die Autobahnen A555, A559 und A565 ab."
+        }
+      },
+      "parking": {
+        "title": "Parkhäuser auswählen",
+        "description": "Live-Belegung der Bonner Parkhäuser. Die Liste ist nach Entfernung zu deinem Zuhause sortiert; Parkhäuser im Umkreis von 3 km sind vorausgewählt – passe die Auswahl einfach an. Du kannst später jederzeit Parkhäuser hinzufügen oder entfernen.",
+        "data": {
+          "parkings": "Parkhäuser"
+        },
+        "data_description": {
+          "parkings": "Für jedes gewählte Parkhaus entstehen Sensoren für freie Plätze, Auslastung, Trend und Öffnungsstatus – inklusive Position für die Karte."
+        }
+      },
+      "parking_unavailable": {
+        "title": "Parkhaus-Daten nicht erreichbar",
+        "description": "Die Parkhaus-Daten (BCP Bonn) sind derzeit nicht erreichbar. Du kannst es erneut versuchen oder die Einrichtung ohne Parkhäuser abschließen – sie lassen sich später jederzeit hinzufügen.",
+        "menu_options": {
+          "parking": "Erneut versuchen",
+          "routes_menu": "Ohne Parkhäuser fortfahren"
+        }
+      },
+      "routes_menu": {
+        "title": "Strecken mit Reisezeiten?",
+        "description": "Für Reisezeiten und Stau-Warnungen auf eigenen Strecken (z. B. Zuhause → Büro) nutzt BonnVoyage einen externen Routing-Dienst. Dafür ist ein API-Schlüssel des Anbieters nötig – der kostenlose Tarif trägt bei Rund-um-die-Uhr-Abfrage etwa 2 Strecken (20.000 Anfragen/Monat). Parkhäuser, Stadt-Verkehrslage und Meldungen funktionieren ohne Schlüssel.",
+        "menu_options": {
+          "provider": "Reisezeit-Anbieter jetzt einrichten (API-Schlüssel erforderlich)",
+          "finish": "Ohne Strecken abschließen – jederzeit nachholbar"
+        }
+      },
+      "provider": {
+        "title": "Reisezeit-Anbieter",
+        "description": "Wähle einen Anbieter und trage deinen API-Schlüssel ein. Einen kostenlosen Schlüssel erhältst du im Entwicklerportal des Anbieters. Datenschutz-Hinweis: Die Koordinaten deiner konfigurierten Strecken werden an den Anbieter übertragen (auf ~11 m gerundet); sonst verlässt nichts dein Zuhause. Der Schlüssel wird nur lokal in Home Assistant gespeichert.",
+        "data": {
+          "provider": "Anbieter",
+          "api_key": "API-Schlüssel"
+        },
+        "data_description": {
+          "api_key": "Wird beim Fortfahren mit einer Testanfrage geprüft."
+        }
+      },
+      "reauth_confirm": {
+        "title": "API-Schlüssel erneuern",
+        "description": "Der Reisezeit-Anbieter akzeptiert den hinterlegten API-Schlüssel für {name} nicht mehr. Trage einen gültigen Schlüssel ein, damit die Strecken-Sensoren wieder aktualisiert werden. Parkhäuser, Stadt-Verkehrslage und Meldungen sind davon nicht betroffen.",
+        "data": {
+          "api_key": "API-Schlüssel"
+        }
+      }
+    },
+    "error": {
+      "unknown": "Unerwarteter Fehler. Details findest du im Home-Assistant-Protokoll.",
+      "invalid_auth": "Der Anbieter hat den API-Schlüssel abgelehnt. Prüfe, ob der Schlüssel vollständig kopiert wurde und für die Routing-Schnittstelle freigeschaltet ist.",
+      "cannot_connect": "Der Reisezeit-Anbieter ist derzeit nicht erreichbar. Das liegt nicht an deinem Schlüssel – prüfe deine Internetverbindung und versuche es in ein paar Minuten erneut.",
+      "rate_limited": "Der Anbieter meldet zu viele Anfragen (Kontingent erreicht). Warte einige Minuten und versuche es dann erneut."
+    },
+    "abort": {
+      "single_instance_allowed": "BonnVoyage ist bereits eingerichtet. Strecken und Parkhäuser fügst du über die bestehende Integration hinzu.",
+      "reauth_successful": "Der API-Schlüssel wurde erfolgreich aktualisiert."
+    }
+  },
+  "config_subentries": {
+    "parking": {
+      "initiate_flow": {
+        "user": "Parkhaus hinzufügen"
+      },
+      "entry_type": "Parkhaus",
+      "step": {
+        "user": {
+          "title": "Parkhaus hinzufügen",
+          "description": "Die Liste ist nach Entfernung zu deinem Zuhause sortiert. Bereits eingerichtete Parkhäuser werden nicht mehr angezeigt.",
+          "data": {
+            "facility_id": "Parkhaus"
+          }
+        }
+      },
+      "abort": {
+        "bcp_unavailable": "Die Parkhaus-Daten (BCP Bonn) sind derzeit nicht erreichbar. Versuche es später erneut.",
+        "all_configured": "Alle derzeit gemeldeten Parkhäuser sind bereits eingerichtet.",
+        "no_parkings": "Es wurden aktuell keine Parkhäuser gemeldet. Das ist meist eine vorübergehende Störung der BCP-Schnittstelle – versuche es später erneut."
+      }
+    },
+    "route": {
+      "initiate_flow": {
+        "user": "Strecke hinzufügen"
+      },
+      "entry_type": "Strecke",
+      "step": {
+        "provider": {
+          "title": "Reisezeit-Anbieter einrichten",
+          "description": "Für Reisezeiten wird ein externer Routing-Dienst benötigt – dieser Schritt ist nur einmal nötig. Deine Parkhäuser, Stadt-Verkehrslage und Meldungen laufen unabhängig davon weiter. Einen kostenlosen API-Schlüssel erhältst du im Entwicklerportal des Anbieters; Strecken-Koordinaten gehen (gerundet) an den Anbieter.",
+          "data": {
+            "provider": "Anbieter",
+            "api_key": "API-Schlüssel"
+          },
+          "data_description": {
+            "api_key": "Wird beim Fortfahren mit einer Testanfrage geprüft."
+          }
+        },
+        "start": {
+          "title": "Strecke hinzufügen – Start (1/3)",
+          "description": "Wo beginnt die Strecke? Wähle eine deiner Zonen oder setze im nächsten Schritt einen Punkt auf der Karte.",
+          "data": {
+            "start": "Startpunkt"
+          },
+          "data_description": {
+            "start": "Zonen sind deine in Home Assistant hinterlegten Orte, z. B. Zuhause oder Arbeit."
+          }
+        },
+        "start_map": {
+          "title": "Start auf der Karte wählen (1/3)",
+          "description": "Verschiebe die Markierung an den Startpunkt. Der Punkt sollte auf oder nahe einer befahrbaren Straße liegen.",
+          "data": {
+            "location": "Startpunkt"
+          }
+        },
+        "dest": {
+          "title": "Strecke hinzufügen – Ziel (2/3)",
+          "description": "Wohin führt die Strecke? Wähle eine Zone oder setze im nächsten Schritt einen Punkt auf der Karte.",
+          "data": {
+            "destination": "Zielpunkt"
+          }
+        },
+        "dest_map": {
+          "title": "Ziel auf der Karte wählen (2/3)",
+          "description": "Verschiebe die Markierung an den Zielpunkt. Der Punkt sollte auf oder nahe einer befahrbaren Straße liegen.",
+          "data": {
+            "location": "Zielpunkt"
+          }
+        },
+        "settings": {
+          "title": "Strecke abschließen (3/3)",
+          "description": "Fast fertig: Name prüfen und Stau-Schwelle festlegen. Beim Speichern wird eine Proberoute berechnet.",
+          "data": {
+            "name": "Name der Strecke",
+            "delay_threshold": "Stau-Warnung ab Verzögerung",
+            "add_via": "Zwischenpunkt festlegen"
+          },
+          "data_description": {
+            "name": "Wird für die Sensornamen verwendet, z. B. „Zuhause → Büro“.",
+            "delay_threshold": "Der Stau-Sensor meldet ein Problem, sobald die Verzögerung gegenüber freier Fahrt diesen Wert (in Minuten) erreicht.",
+            "add_via": "Erzwingt die Route über einen Zwischenpunkt, z. B. über die A565. Für die meisten Strecken nicht nötig."
+          }
+        },
+        "via_map": {
+          "title": "Zwischenpunkt auf der Karte wählen",
+          "description": "Verschiebe die Markierung an den Punkt, über den die Route führen soll.",
+          "data": {
+            "location": "Zwischenpunkt"
+          }
+        }
+      },
+      "error": {
+        "invalid_auth": "Der Anbieter hat den API-Schlüssel abgelehnt. Prüfe, ob der Schlüssel vollständig kopiert wurde und für die Routing-Schnittstelle freigeschaltet ist.",
+        "cannot_connect": "Der Reisezeit-Anbieter ist derzeit nicht erreichbar. Prüfe deine Internetverbindung und versuche es in ein paar Minuten erneut.",
+        "rate_limited": "Der Anbieter meldet zu viele Anfragen (Kontingent erreicht). Warte einige Minuten und versuche es dann erneut.",
+        "route_not_found": "Für die gewählten Punkte konnte keine Route berechnet werden. Prüfe, ob Start und Ziel auf oder nahe einer befahrbaren Straße liegen, und verschiebe die Markierung gegebenenfalls.",
+        "points_too_close": "Start und Ziel liegen zu nah beieinander. Wähle zwei unterschiedliche Orte mit mindestens einigen hundert Metern Abstand.",
+        "name_exists": "Eine Strecke mit diesem Namen existiert bereits. Wähle einen anderen Namen."
+      }
+    },
+    "segment": {
+      "initiate_flow": {
+        "user": "Stadtstrecke beobachten"
+      },
+      "entry_type": "Stadtstrecke",
+      "step": {
+        "user": {
+          "title": "Stadtstrecke beobachten",
+          "description": "Die Stadt Bonn misst die Verkehrslage auf 111 Hauptstraßen-Abschnitten live. Wähle einen Punkt auf deiner Pendelstrecke – der nächstgelegene gemessene Abschnitt wird mit Status- und Tempo-Sensoren beobachtet.",
+          "data": {
+            "location": "Punkt auf deiner Strecke",
+            "name": "Name (optional)"
+          },
+          "data_description": {
+            "location": "Verschiebe die Markierung auf die Straße, die dich interessiert.",
+            "name": "Zum Beispiel „Adenauerallee stadteinwärts“. Leer lassen für einen automatischen Namen."
+          }
+        }
+      },
+      "error": {
+        "no_segment_nearby": "Im Umkreis von 2 km um den gewählten Punkt wird kein Abschnitt gemessen. Die Stadt misst nur ausgewählte Hauptstraßen – wähle einen Punkt näher an einer Hauptstraße.",
+        "already_configured": "Der nächstgelegene Abschnitt zu diesem Punkt wird bereits beobachtet."
+      },
+      "abort": {
+        "segments_unavailable": "Die Stadt-Verkehrslage ist derzeit nicht erreichbar. Versuche es später erneut."
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "BonnVoyage – Optionen",
+        "description": "Bereich für Baustellen, Verkehrsmeldungen und Störungen anpassen. Strecken, Stadtstrecken und Parkhäuser verwaltest du direkt auf der Integrationsseite.",
+        "data": {
+          "area": "Bereich für Meldungen"
+        },
+        "data_description": {
+          "area": "Mittelpunkt und Radius, in dem Baustellen und Verkehrswarnungen erscheinen."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "free_spaces": {
+        "name": "Freie Plätze"
+      },
+      "occupancy": {
+        "name": "Auslastung"
+      },
+      "trend": {
+        "name": "Trend",
+        "state": {
+          "filling": "Füllt sich",
+          "steady": "Gleichbleibend",
+          "emptying": "Leert sich"
+        }
+      },
+      "active_messages": {
+        "name": "Aktive Meldungen"
+      },
+      "disrupted_segments": {
+        "name": "Gestörte Abschnitte"
+      },
+      "segment_status": {
+        "name": "Verkehrsstatus",
+        "state": {
+          "normal": "Normal",
+          "elevated": "Erhöht",
+          "congestion_risk": "Staugefahr",
+          "congested": "Stau",
+          "unknown": "Nicht ermittelbar"
+        }
+      },
+      "segment_speed": {
+        "name": "Geschwindigkeit"
+      },
+      "travel_time": {
+        "name": "Reisezeit"
+      },
+      "delay": {
+        "name": "Verzögerung"
+      },
+      "traffic_level": {
+        "name": "Verkehrslage",
+        "state": {
+          "free_flow": "Frei",
+          "heavy": "Dicht",
+          "queuing": "Stockend",
+          "congested": "Stau"
+        }
+      }
+    },
+    "binary_sensor": {
+      "open": {
+        "name": "Geöffnet"
+      },
+      "full": {
+        "name": "Voll"
+      },
+      "segment_congestion": {
+        "name": "Stau"
+      },
+      "route_congestion": {
+        "name": "Stau"
+      }
+    },
+    "event": {
+      "new_message": {
+        "name": "Neue Verkehrsmeldung"
+      }
+    }
+  }
+}

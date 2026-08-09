@@ -1,0 +1,6 @@
+pytest-homeassistant-custom-component
+aioresponses
+defusedxml==0.7.1
+ruff
+mypy
+types-defusedxml

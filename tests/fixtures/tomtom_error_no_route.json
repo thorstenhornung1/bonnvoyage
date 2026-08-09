@@ -1,0 +1,7 @@
+{
+  "formatVersion": "0.0.12",
+  "detailedError": {
+    "code": "NO_ROUTE_FOUND",
+    "message": "No valid route could be found."
+  }
+}

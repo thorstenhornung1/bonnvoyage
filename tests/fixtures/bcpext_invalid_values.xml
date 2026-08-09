@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<parkhaeuser>
+  <parkhaus>
+    <lfdnr>1</lfdnr>
+    <bezeichnung>markt</bezeichnung>
+    <gesamt>287</gesamt>
+    <frei>999</frei>
+    <status>0</status>
+    <zeitstempel>09.08.2026 07:15</zeitstempel>
+    <tendenz>3</tendenz>
+  </parkhaus>
+  <parkhaus>
+    <lfdnr>2</lfdnr>
+    <bezeichnung>friedensplatz</bezeichnung>
+    <gesamt>abc</gesamt>
+    <frei>-5</frei>
+    <status>77</status>
+    <zeitstempel>gestern</zeitstempel>
+    <tendenz></tendenz>
+  </parkhaus>
+  <parkhaus>
+    <lfdnr>3</lfdnr>
+    <bezeichnung></bezeichnung>
+    <gesamt>100</gesamt>
+    <frei>50</frei>
+    <status>0</status>
+    <zeitstempel>09.08.2026 07:15</zeitstempel>
+    <tendenz>3</tendenz>
+  </parkhaus>
+</parkhaeuser>

@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<parkhaeuser xmlns:msdata="urn:schemas-microsoft-com:xml-msdata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <parkhaus>
+    <lfdnr>1</lfdnr>
+    <bezeichnung>beethoven</bezeichnung>
+    <gesamt>416</gesamt>
+    <frei>000</frei>
+    <status>2</status>
+    <zeitstempel>09.08.2026 07:15</zeitstempel>
+    <tendenz>3</tendenz>
+  </parkhaus>
+  <parkhaus>
+    <lfdnr>2</lfdnr>
+    <bezeichnung>beetplatz</bezeichnung>
+    <gesamt>200</gesamt>
+    <frei>057</frei>
+    <status>0</status>
+    <zeitstempel>09.08.2026 07:15</zeitstempel>
+    <tendenz>3</tendenz>
+  </parkhaus>
+  <parkhaus>
+    <lfdnr>3</lfdnr>
+    <bezeichnung>friedensplatz</bezeichnung>
+    <gesamt>810</gesamt>
+    <frei>000</frei>
+    <status>2</status>
+    <zeitstempel>09.08.2026 07:15</zeitstempel>
+    <tendenz>3</tendenz>
+  </parkhaus>
+  <parkhaus>
+    <lfdnr>4</lfdnr>
+    <bezeichnung>karstadt</bezeichnung>
+    <gesamt>99</gesamt>
+    <frei>000</frei>
+    <status>2</status>
+    <zeitstempel>25.07.2018 09:13</zeitstempel>
+    <tendenz>3</tendenz>
+  </parkhaus>
+  <parkhaus>
+    <lfdnr>5</lfdnr>
+    <bezeichnung>markt</bezeichnung>
+    <gesamt>287</gesamt>
+    <frei>251</frei>
+    <status>0</status>
+    <zeitstempel>09.08.2026 07:15</zeitstempel>
+    <tendenz>3</tendenz>
+  </parkhaus>
+  <parkhaus>
+    <lfdnr>6</lfdnr>
+    <bezeichnung>muensterplatz</bezeichnung>
+    <gesamt>312</gesamt>
+    <frei>000</frei>
+    <status>2</status>
+    <zeitstempel>09.08.2026 07:15</zeitstempel>
+    <tendenz>3</tendenz>
+  </parkhaus>
+  <parkhaus>
+    <lfdnr>7</lfdnr>
+    <bezeichnung>operngarage</bezeichnung>
+    <gesamt>380</gesamt>
+    <frei>000</frei>
+    <status>2</status>
+    <zeitstempel>09.08.2026 07:15</zeitstempel>
+    <tendenz>3</tendenz>
+  </parkhaus>
+  <parkhaus>
+    <lfdnr>8</lfdnr>
+    <bezeichnung>Rabinstrasse</bezeichnung>
+    <gesamt>305</gesamt>
+    <frei>180</frei>
+    <status>0</status>
+    <zeitstempel>09.08.2026 07:15</zeitstempel>
+    <tendenz>3</tendenz>
+  </parkhaus>
+  <parkhaus>
+    <lfdnr>9</lfdnr>
+    <bezeichnung>rheinaue</bezeichnung>
+    <gesamt>240</gesamt>
+    <frei>220</frei>
+    <status>0</status>
+    <zeitstempel>09.08.2026 07:15</zeitstempel>
+    <tendenz>3</tendenz>
+  </parkhaus>
+  <parkhaus>
+    <lfdnr>10</lfdnr>
+    <bezeichnung>stadthaus</bezeichnung>
+    <gesamt>320</gesamt>
+    <frei>257</frei>
+    <status>0</status>
+    <zeitstempel>09.08.2026 07:15</zeitstempel>
+    <tendenz>3</tendenz>
+  </parkhaus>
+  <parkhaus>
+    <lfdnr>11</lfdnr>
+    <bezeichnung>stadthaus_unten</bezeichnung>
+    <gesamt>360</gesamt>
+    <frei>000</frei>
+    <status>2</status>
+    <zeitstempel>09.08.2026 07:15</zeitstempel>
+    <tendenz>3</tendenz>
+  </parkhaus>
+  <parkhaus>
+    <lfdnr>12</lfdnr>
+    <bezeichnung>unigarage</bezeichnung>
+    <gesamt>438</gesamt>
+    <frei>316</frei>
+    <status>0</status>
+    <zeitstempel>09.08.2026 07:15</zeitstempel>
+    <tendenz>3</tendenz>
+  </parkhaus>
+  <parkhaus>
+    <lfdnr>13</lfdnr>
+    <bezeichnung>hauptbahnhof</bezeichnung>
+    <gesamt>94</gesamt>
+    <frei>061</frei>
+    <status>0</status>
+    <zeitstempel>09.08.2026 07:15</zeitstempel>
+    <tendenz>3</tendenz>
+  </parkhaus>
+  <parkhaus>
+    <lfdnr>14</lfdnr>
+    <bezeichnung>bike_ride</bezeichnung>
+    <gesamt>220</gesamt>
+    <frei>175</frei>
+    <status>0</status>
+    <zeitstempel>09.08.2026 07:15</zeitstempel>
+    <tendenz>3</tendenz>
+  </parkhaus>
+</parkhaeuser>
