@@ -175,7 +175,7 @@
       "step": {
         "user": {
           "title": "Watch city route – show location (1/3)",
-          "description": "The city of Bonn measures live traffic on 111 main road segments. Put the marker on the street you care about – the next step shows the measured segments nearby and you pick one explicitly. Tip: the city's own traffic map at https://stadtplan.bonn.de shows which streets are measured. To display street names, only the coordinates of the city's measurement segments are sent to an OpenStreetMap service – never your picked point.",
+          "description": "The city of Bonn measures live traffic on 111 main road segments. Put the marker on the street you care about – the next step shows the measured segments nearby and you pick one explicitly. Tip: the city's own traffic map at {stadtplan_url} shows which streets are measured. To display street names, only the coordinates of the city's measurement segments are sent to an OpenStreetMap service – never your picked point.",
           "data": {
             "location": "Point on your route"
           },

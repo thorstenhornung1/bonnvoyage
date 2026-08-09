@@ -175,7 +175,7 @@
       "step": {
         "user": {
           "title": "Stadtstrecke beobachten – Ort zeigen (1/3)",
-          "description": "Die Stadt Bonn misst die Verkehrslage live auf 111 Hauptstraßen-Abschnitten. Setze die Markierung auf die Straße, die dich interessiert – im nächsten Schritt siehst du die gemessenen Abschnitte in der Nähe und wählst einen explizit aus. Tipp: Welche Straßen gemessen werden, zeigt die Verkehrslage-Karte der Stadt auf https://stadtplan.bonn.de. Zur Anzeige von Straßennamen werden nur die Koordinaten der städtischen Messabschnitte an einen OpenStreetMap-Dienst übertragen – nie dein gewählter Punkt.",
+          "description": "Die Stadt Bonn misst die Verkehrslage live auf 111 Hauptstraßen-Abschnitten. Setze die Markierung auf die Straße, die dich interessiert – im nächsten Schritt siehst du die gemessenen Abschnitte in der Nähe und wählst einen explizit aus. Tipp: Welche Straßen gemessen werden, zeigt die Verkehrslage-Karte der Stadt auf {stadtplan_url}. Zur Anzeige von Straßennamen werden nur die Koordinaten der städtischen Messabschnitte an einen OpenStreetMap-Dienst übertragen – nie dein gewählter Punkt.",
           "data": {
             "location": "Punkt auf deiner Strecke"
           },

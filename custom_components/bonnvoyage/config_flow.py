@@ -827,7 +827,12 @@ class SegmentSubentryFlowHandler(ConfigSubentryFlow):
                 ): LocationSelector()
             }
         )
-        return self.async_show_form(step_id="user", data_schema=schema, errors=errors)
+        return self.async_show_form(
+            step_id="user",
+            data_schema=schema,
+            errors=errors,
+            description_placeholders={"stadtplan_url": "https://stadtplan.bonn.de"},
+        )
 
     async def _async_resolve_candidates(
         self, nearest: list[tuple[TrafficSegment, float]]
