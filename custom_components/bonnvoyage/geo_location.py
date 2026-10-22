@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from homeassistant.components.geo_location import GeolocationEvent
+from homeassistant.components.geo_location import (
+    DOMAIN as GEO_LOCATION_DOMAIN,
+    GeolocationEvent,
+)
 from homeassistant.const import UnitOfLength
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
@@ -13,7 +16,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util.location import distance
 
 from .api.models import TrafficMessage, TrafficSegment
-from .const import DOMAIN, MessageSource
+from .const import DOMAIN, GEO_REMOVAL_GRACE_POLLS, MessageSource
 from .coordinator import (
     BonnTrafficCoordinator,
     BonnVoyageConfigEntry,
@@ -35,21 +38,62 @@ async def async_setup_entry(
 ) -> None:
     """Set up geolocation events for messages and disrupted segments."""
     runtime = entry.runtime_data
-    for coordinator in (runtime.city, runtime.autobahn):
-        _setup_coordinator(entry, coordinator, async_add_entities)
-    _setup_segments(entry, runtime.traffic, async_add_entities)
+    for source, coordinator in (
+        (MessageSource.CITY, runtime.city),
+        (MessageSource.AUTOBAHN, runtime.autobahn),
+    ):
+        _setup_coordinator(hass, entry, source, coordinator, async_add_entities)
+    _setup_segments(hass, entry, runtime.traffic, async_add_entities)
+
+
+@callback
+def _remove_orphaned_entities(
+    hass: HomeAssistant,
+    entry: BonnVoyageConfigEntry,
+    unique_id_prefix: str,
+    keep_unique_ids: set[str],
+) -> None:
+    """Drop registry entries of one source that are not in the current data.
+
+    After a restart or reload there is no previous data set to diff against,
+    so registry entries of vanished messages would linger as unavailable
+    entities. Only called after a fresh, complete fetch of that source; a
+    failed or partial refresh never removes anything (0.7.1 wiped every
+    geo_location entry on each setup).
+    """
+    registry = er.async_get(hass)
+    for reg_entry in er.async_entries_for_config_entry(registry, entry.entry_id):
+        if (
+            reg_entry.domain == GEO_LOCATION_DOMAIN
+            and reg_entry.platform == DOMAIN
+            and reg_entry.unique_id.startswith(unique_id_prefix)
+            and reg_entry.unique_id not in keep_unique_ids
+        ):
+            registry.async_remove(reg_entry.entity_id)
+
+
+def _mappable(messages: dict[str, TrafficMessage] | None) -> dict[str, TrafficMessage]:
+    """Messages that get a map entity (volatile INRIX ids are skipped)."""
+    return {
+        message_id: message
+        for message_id, message in (messages or {}).items()
+        if not message.volatile_id
+    }
 
 
 def _setup_segments(
+    hass: HomeAssistant,
     entry: BonnVoyageConfigEntry,
     coordinator: BonnTrafficCoordinator,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Track disrupted city segments inside the area."""
     known_ids: set[str] = set()
+    orphans_removed = False
 
     @callback
     def _check_segments() -> None:
+        nonlocal orphans_removed
         current = coordinator.disrupted_in_area()
         new_ids = set(current) - known_ids
         if new_ids:
@@ -60,22 +104,32 @@ def _setup_segments(
                 )
                 for segment_id in new_ids
             )
+        if not orphans_removed and coordinator.fetch_complete:
+            orphans_removed = True
+            prefix = f"{entry.entry_id}_segment_"
+            _remove_orphaned_entities(
+                hass, entry, prefix, {f"{prefix}{sid}" for sid in known_ids}
+            )
 
     _check_segments()
     entry.async_on_unload(coordinator.async_add_listener(_check_segments))
 
 
 def _setup_coordinator(
+    hass: HomeAssistant,
     entry: BonnVoyageConfigEntry,
+    source: MessageSource,
     coordinator: MessagesCoordinator,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Track a coordinator and add entities for new messages."""
     known_ids: set[str] = set()
+    orphans_removed = False
 
     @callback
     def _check_messages() -> None:
-        current = coordinator.data or {}
+        nonlocal orphans_removed
+        current = _mappable(coordinator.data)
         new_ids = set(current) - known_ids
         if new_ids:
             known_ids.update(new_ids)
@@ -85,9 +139,33 @@ def _setup_coordinator(
                 )
                 for message_id in new_ids
             )
+        # Message ids carry the source as prefix ("city_…", "autobahn_…"),
+        # so each source only reaps its own registry entries.
+        if not orphans_removed and coordinator.fetch_complete:
+            orphans_removed = True
+            _remove_orphaned_entities(
+                hass,
+                entry,
+                f"{entry.entry_id}_{source}_",
+                {f"{entry.entry_id}_{mid}" for mid in known_ids},
+            )
 
     _check_messages()
     entry.async_on_unload(coordinator.async_add_listener(_check_messages))
+
+
+@callback
+def _async_remove_entity(entity: GeolocationEvent) -> None:
+    """Remove a vanished map entity together with its registry entry.
+
+    Removing the registry entry makes Home Assistant force-remove the live
+    entity (including its state).
+    """
+    registry = er.async_get(entity.hass)
+    if registry.async_get(entity.entity_id) is not None:
+        registry.async_remove(entity.entity_id)
+    else:
+        entity.hass.async_create_task(entity.async_remove(force_remove=True))
 
 
 class BonnVoyageLocationEvent(CoordinatorEntity[MessagesCoordinator], GeolocationEvent):
@@ -112,6 +190,7 @@ class BonnVoyageLocationEvent(CoordinatorEntity[MessagesCoordinator], Geolocatio
         super().__init__(coordinator)
         self._message_id = message.message_id
         self._known_ids = known_ids
+        self._absent_polls = 0
         self._attr_unique_id = f"{entry.entry_id}_{message.message_id}"
         self._attr_attribution = ATTRIBUTION.get(message.source)
         self._update_from_message(message)
@@ -137,22 +216,25 @@ class BonnVoyageLocationEvent(CoordinatorEntity[MessagesCoordinator], Geolocatio
 
     @callback
     def _handle_coordinator_update(self) -> None:
-        """Update from coordinator data; self-remove if the message is gone.
+        """Update from coordinator data; self-remove once the message is gone.
 
-        Removing the registry entry makes Home Assistant force-remove the
-        live entity (including its state). A plain unload keeps the registry
-        entries; the orphan cleanup in async_setup_entry reaps them then.
+        A message counts as gone only after GEO_REMOVAL_GRACE_POLLS
+        consecutive polls that would have contained it: failed refreshes,
+        stale bridging and skipped road/service requests do not count. A
+        plain unload keeps the registry entries; the orphan cleanup after
+        the next complete fetch reaps them then.
         """
         message = (self.coordinator.data or {}).get(self._message_id)
         if message is None:
-            self._known_ids.discard(self._message_id)
-            registry = er.async_get(self.hass)
-            if registry.async_get(self.entity_id) is not None:
-                registry.async_remove(self.entity_id)
-            else:
-                self.hass.async_create_task(self.async_remove(force_remove=True))
-            return
-        self._update_from_message(message)
+            if self.coordinator.covers(self._message):
+                self._absent_polls += 1
+            if self._absent_polls >= GEO_REMOVAL_GRACE_POLLS:
+                self._known_ids.discard(self._message_id)
+                _async_remove_entity(self)
+                return
+        else:
+            self._absent_polls = 0
+            self._update_from_message(message)
         self.async_write_ha_state()
 
     @property
@@ -191,6 +273,9 @@ class BonnVoyageSegmentLocationEvent(
     _attr_attribution = (
         "Datenquelle: Bundesstadt Bonn, Amt 66, https://opendata.bonn.de"
     )
+    # Speed and measurement time change on nearly every 5-minute poll; keeping
+    # them out of the recorder avoids a new attributes row per write.
+    _unrecorded_attributes = frozenset({"speed_kmh", "measured_at"})
 
     def __init__(
         self,
@@ -203,16 +288,16 @@ class BonnVoyageSegmentLocationEvent(
         super().__init__(coordinator)
         self._segment_id = segment.segment_id
         self._known_ids = known_ids
+        self._absent_polls = 0
         self._attr_unique_id = f"{entry.entry_id}_segment_{segment.segment_id}"
         self._update_from_segment(segment)
 
     def _update_from_segment(self, segment: TrafficSegment) -> None:
         """Copy segment fields into entity attributes."""
         self._segment = segment
-        name = segment.raw_status or segment.status
-        if segment.speed_kmh is not None:
-            name = f"{name} ({segment.speed_kmh} km/h)"
-        self._attr_name = name
+        # No speed in the name: it changed the friendly_name (and with it the
+        # recorded attributes) on most polls. The speed is in speed_kmh.
+        self._attr_name = segment.raw_status or segment.status
         self._attr_latitude = segment.midpoint[0]
         self._attr_longitude = segment.midpoint[1]
         meters = distance(
@@ -232,19 +317,20 @@ class BonnVoyageSegmentLocationEvent(
     def _handle_coordinator_update(self) -> None:
         """Update from coordinator data; self-remove once no longer disrupted.
 
-        Same lifecycle as the message events: removing the registry entry
-        makes Home Assistant force-remove the live entity.
+        Same lifecycle as the message events, including the grace period of
+        GEO_REMOVAL_GRACE_POLLS complete polls.
         """
         segment = self.coordinator.disrupted_in_area().get(self._segment_id)
         if segment is None:
-            self._known_ids.discard(self._segment_id)
-            registry = er.async_get(self.hass)
-            if registry.async_get(self.entity_id) is not None:
-                registry.async_remove(self.entity_id)
-            else:
-                self.hass.async_create_task(self.async_remove(force_remove=True))
-            return
-        self._update_from_segment(segment)
+            if self.coordinator.fetch_complete:
+                self._absent_polls += 1
+            if self._absent_polls >= GEO_REMOVAL_GRACE_POLLS:
+                self._known_ids.discard(self._segment_id)
+                _async_remove_entity(self)
+                return
+        else:
+            self._absent_polls = 0
+            self._update_from_segment(segment)
         self.async_write_ha_state()
 
     @property

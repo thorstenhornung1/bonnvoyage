@@ -37,6 +37,10 @@ class TrafficMessage:
 
     ``source`` and ``kind`` carry the string values of the MessageSource and
     MessageKind enums; the API layer stays free of Home Assistant imports.
+
+    ``volatile_id`` marks messages whose source id changes on every feed
+    update (Autobahn INRIX traffic warnings). They stay in the event entity
+    and the active-messages sensor but get no geo_location entity.
     """
 
     message_id: str
@@ -53,6 +57,7 @@ class TrafficMessage:
     restriction: str | None = None
     address: str | None = None
     authority: str | None = None
+    volatile_id: bool = False
 
 
 @dataclass(frozen=True, slots=True)

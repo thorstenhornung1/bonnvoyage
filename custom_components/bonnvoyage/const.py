@@ -57,6 +57,11 @@ AUTOBAHN_ROADS: Final = ("A555", "A559", "A565")
 
 EVENT_TYPE_NEW_MESSAGE: Final = "new_message"
 
+# A geo_location entity is only removed after its message/segment has been
+# absent for this many consecutive, complete polls (0.7.2: a single missing
+# poll used to delete and re-create the entity, flooding the registry).
+GEO_REMOVAL_GRACE_POLLS: Final = 2
+
 # Identifier of the service device grouping the message sensor and event.
 MESSAGES_DEVICE_ID: Final = "messages"
 

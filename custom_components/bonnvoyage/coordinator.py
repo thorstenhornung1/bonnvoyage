@@ -34,6 +34,7 @@ from .const import (
     AUTOBAHN_ROADS,
     CONF_AREA,
     DEPARTURES_COUNT,
+    DISRUPTED_SEGMENT_STATUSES,
     DOMAIN,
     MESSAGES_STALE_TOLERANCE,
     MESSAGES_UPDATE_INTERVAL,
@@ -243,6 +244,32 @@ class MessagesCoordinator(
             update_interval=MESSAGES_UPDATE_INTERVAL,
         )
         self._failure_count = 0
+        # (road, kind) pairs missing from the last, otherwise successful fetch
+        self.failed_services: frozenset[tuple[str, str]] = frozenset()
+
+    @property
+    def fetch_complete(self) -> bool:
+        """Whether the current data is a fresh and complete fetch.
+
+        False while stale data bridges an outage or a refresh failed, and
+        when single requests of a partial result were skipped. Only then may
+        absent messages be treated as gone.
+        """
+        return (
+            self.last_update_success
+            and self.data is not None
+            and self._failure_count == 0
+            and not self.failed_services
+        )
+
+    def covers(self, message: TrafficMessage) -> bool:
+        """Whether the last fetch would have contained this message."""
+        return (
+            self.last_update_success
+            and self.data is not None
+            and self._failure_count == 0
+            and (message.road, message.kind) not in self.failed_services
+        )
 
     async def _async_update_data(self) -> dict[str, TrafficMessage]:
         """Fetch messages, tolerating brief outages with stale data."""
@@ -323,8 +350,10 @@ class AutobahnCoordinator(MessagesCoordinator):
         self._client = client
 
     async def _async_fetch(self) -> dict[str, TrafficMessage]:
-        """Fetch motorway messages."""
-        return await self._client.async_fetch_messages(AUTOBAHN_ROADS)
+        """Fetch motorway messages and remember skipped road/service pairs."""
+        messages = await self._client.async_fetch_messages(AUTOBAHN_ROADS)
+        self.failed_services = self._client.failed_services
+        return messages
 
 
 class BonnTrafficCoordinator(
@@ -372,6 +401,15 @@ class BonnTrafficCoordinator(
         self._report_health(True)
         return segments
 
+    @property
+    def fetch_complete(self) -> bool:
+        """Whether the current data is a fresh fetch (no stale bridging)."""
+        return (
+            self.last_update_success
+            and self.data is not None
+            and self._failure_count == 0
+        )
+
     def disrupted_in_area(self) -> dict[str, TrafficSegment]:
         """Disrupted segments inside the configured message area."""
         entry = self.config_entry
@@ -382,7 +420,7 @@ class BonnTrafficCoordinator(
 
         disrupted: dict[str, TrafficSegment] = {}
         for segment_id, segment in (self.data or {}).items():
-            if segment.status not in ("elevated", "congestion_risk", "congested"):
+            if segment.status not in DISRUPTED_SEGMENT_STATUSES:
                 continue
             meters = distance(
                 latitude, longitude, segment.midpoint[0], segment.midpoint[1]

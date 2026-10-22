@@ -33,6 +33,14 @@ SERVICES: Final[dict[str, str]] = {
 MAX_TEXT_LENGTH: Final = 500
 MAX_DESCRIPTION_LINES: Final = 8
 
+# INRIX traffic warnings ("INRIX--vi-avl.<date>_<counter>.de0") get a new
+# counter on every feed update, so their identifier is not stable (live data
+# 10/2026: about 80 % of the geo_location churn came from such ids).
+# Stripping the counter is no reliable way out: the remainder only
+# carries a date, so concurrent warnings would collapse into one id and the
+# id would still change at midnight. These messages are flagged as volatile.
+VOLATILE_ID_PREFIX: Final = "INRIX--vi-avl."
+
 
 class AutobahnClient:
     """Async client for warnings, roadworks and closures per motorway."""
@@ -40,6 +48,8 @@ class AutobahnClient:
     def __init__(self, session: aiohttp.ClientSession) -> None:
         """Initialize the client with an injected session."""
         self._session = session
+        # (road, kind) pairs whose request failed in the last fetch
+        self.failed_services: frozenset[tuple[str, str]] = frozenset()
 
     async def async_fetch_messages(
         self, roads: tuple[str, ...]
@@ -47,7 +57,9 @@ class AutobahnClient:
         """Fetch all services for all roads; tolerate partial failures.
 
         Individual road/service failures are logged and skipped; only if every
-        request fails is an ApiConnectionError raised.
+        request fails is an ApiConnectionError raised. The skipped (road, kind)
+        pairs of a partial result are kept in ``failed_services``, so callers
+        can tell "message gone" from "road not fetched".
         """
         requests = [(road, service) for road in roads for service in SERVICES]
         results = await asyncio.gather(
@@ -56,18 +68,19 @@ class AutobahnClient:
         )
 
         messages: dict[str, TrafficMessage] = {}
-        failures = 0
+        failed: set[tuple[str, str]] = set()
         for (road, service), result in zip(requests, results, strict=True):
             if isinstance(result, BaseException):
                 if not isinstance(result, BonnVoyageApiError):
                     raise result
-                failures += 1
+                failed.add((road, SERVICES[service]))
                 _LOGGER.warning("Autobahn API %s/%s failed: %s", road, service, result)
                 continue
             messages.update(result)
 
-        if failures == len(requests):
+        if len(failed) == len(requests):
             raise ApiConnectionError("All Autobahn API requests failed")
+        self.failed_services = frozenset(failed)
         return messages
 
     async def _async_fetch_service(
@@ -134,6 +147,7 @@ class AutobahnClient:
             road=road,
             is_blocked=_parse_bool(item.get("isBlocked")),
             starts_at=_parse_timestamp(item.get("startTimestamp")),
+            volatile_id=str(identifier).startswith(VOLATILE_ID_PREFIX),
         )
 
 

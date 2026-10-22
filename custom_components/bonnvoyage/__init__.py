@@ -7,7 +7,6 @@ from typing import Any
 
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api.autobahn import AutobahnClient
@@ -110,8 +109,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: BonnVoyageConfigEntry) -
         await stop_coordinator.async_refresh()
         runtime.stops[subentry.subentry_id] = stop_coordinator
 
-    _remove_orphaned_geo_entities(hass, entry)
-
+    # Stale geo_location registry entries are reaped by the geo_location
+    # platform per source, after that source's first complete fetch.
     entry.runtime_data = runtime
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
@@ -130,20 +129,6 @@ def _route_request(data: Any) -> RouteRequest:
         destination=_point(data[CONF_DESTINATION]),
         via=_point(via) if via else None,
     )
-
-
-def _remove_orphaned_geo_entities(
-    hass: HomeAssistant, entry: BonnVoyageConfigEntry
-) -> None:
-    """Drop stale geo_location registry entries from previous runs.
-
-    After a restart there is no previous data set to diff against, so
-    registry entries of vanished messages would linger forever otherwise.
-    """
-    registry = er.async_get(hass)
-    for reg_entry in er.async_entries_for_config_entry(registry, entry.entry_id):
-        if reg_entry.domain == Platform.GEO_LOCATION:
-            registry.async_remove(reg_entry.entity_id)
 
 
 async def _async_update_listener(
