@@ -94,6 +94,13 @@ nicht beim Neustart).
 
 **Karte**: Baustellen, Autobahn-Meldungen und gestörte Stadtabschnitte als
 `geo_location`-Entities (Quelle `bonnvoyage`, nutzbar im Geolocation-Trigger).
+Ausnahme: INRIX-Verkehrswarnungen der Autobahn-API (`INRIX--vi-avl.…`) bekommen
+seit 0.7.2 keine Karten-Entity mehr — ihre Kennung ändert sich bei jedem
+Feed-Update. Sie stehen weiter im Sensor „Aktive Meldungen" (Attribut) und lösen
+das Event „Neue Verkehrsmeldung" aus. Verschwundene Meldungen und Abschnitte
+verlassen die Karte erst nach zwei vollständigen Abfragen ohne sie; fehlgeschlagene
+Abfragen oder ausgefallene Einzelstraßen löschen nichts. Tempo und Messzeit der
+Abschnitte (`speed_kmh`, `measured_at`) landen nicht im Recorder.
 
 ## Datenaktualisierung
 
@@ -192,6 +199,24 @@ automation:
 - **Diagnose für Bug-Reports**: Integrationsseite → ⋮ → „Diagnose herunterladen"
   (API-Schlüssel und alle Koordinaten sind automatisch geschwärzt).
 - Debug-Logs: `logger:` → `custom_components.bonnvoyage: debug`.
+
+### Migration auf 0.7.2: Altlasten in `deleted_entities`
+
+Bis 0.7.1 hat die Integration bei jedem Setup/Reload alle Karten-Entities
+gelöscht und Meldungen sofort beim ersten Fehlen entfernt; INRIX-Warnungen
+kamen mit jeder Aktualisierung unter neuer Kennung zurück. Jede Löschung
+hinterlässt einen Eintrag in `deleted_entities` von
+`.storage/core.entity_registry` — bei längerer Laufzeit mehrere Hundert.
+0.7.2 erzeugt keine neuen mehr, **räumt die alten aber bewusst nicht
+automatisch auf**. Sie sind harmlos (nur Dateigröße und Ladezeit der
+Registry); Home Assistant verwirft sie erst rund 30 Tage, nachdem der
+BonnVoyage-Eintrag gelöscht wurde.
+
+Wer sie vorher loswerden will, tut das manuell: Home Assistant stoppen,
+`.storage/core.entity_registry` sichern, dann in `data.deleted_entities`
+alle Einträge mit `"platform": "bonnvoyage"` und einer `entity_id`, die mit
+`geo_location.` beginnt, entfernen und Home Assistant wieder starten. Niemals
+bei laufendem Home Assistant editieren — es überschreibt die Datei.
 
 ## Entfernen
 

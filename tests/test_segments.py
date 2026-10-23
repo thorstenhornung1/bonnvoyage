@@ -49,8 +49,10 @@ async def test_disrupted_segments_on_map(hass: HomeAssistant) -> None:
     states = _segment_geo_states(hass)
     assert len(states) == EXPECTED_DISRUPTED
 
-    risky = hass.states.get("geo_location.staugefahr_4_km_h")
+    # 0.7.2: no speed in the name (it churned the recorded attributes)
+    risky = hass.states.get("geo_location.staugefahr")
     assert risky is not None
+    assert risky.name == "Staugefahr"
     assert risky.attributes["segment_id"] == "100"
     assert risky.attributes["status"] == "congestion_risk"
     assert risky.attributes["speed_kmh"] == 4
@@ -64,7 +66,7 @@ async def test_disrupted_segments_on_map(hass: HomeAssistant) -> None:
 async def test_segments_clear_when_traffic_normalizes(
     hass: HomeAssistant, aioclient_mock, freezer
 ) -> None:
-    """Recovered segments remove their map entity and reset the counter."""
+    """Recovered segments remove their map entity after the grace period."""
     entry = mock_config_entry()
     await _setup(hass, entry)
     assert len(_segment_geo_states(hass)) == EXPECTED_DISRUPTED
@@ -74,10 +76,97 @@ async def test_segments_clear_when_traffic_normalizes(
     _remock_feeds(aioclient_mock, traffic_content=_all_normal_layer())
     await _advance(hass, freezer, SEGMENT_UPDATE_INTERVAL)
 
-    assert not _segment_geo_states(hass)
+    # First recovered poll: the counter reacts, the map entities stay (grace)
     registry = er.async_get(hass)
     counter_id = registry.async_get_entity_id("sensor", DOMAIN, "disrupted_segments")
     assert hass.states.get(counter_id).state == "0"
+    assert len(_segment_geo_states(hass)) == EXPECTED_DISRUPTED
+
+    await _advance(hass, freezer, SEGMENT_UPDATE_INTERVAL)
+    assert not _segment_geo_states(hass)
+    assert registry.async_get("geo_location.staugefahr") is None
+
+
+async def test_segment_flapping_keeps_entity(
+    hass: HomeAssistant, aioclient_mock, freezer
+) -> None:
+    """A segment missing for a single poll keeps its entity and registry id."""
+    entry = mock_config_entry()
+    await _setup(hass, entry)
+    registry = er.async_get(hass)
+    registry_id = registry.async_get("geo_location.staugefahr").id
+
+    from .test_messages import _remock_feeds
+
+    _remock_feeds(aioclient_mock, traffic_content=_all_normal_layer())
+    await _advance(hass, freezer, SEGMENT_UPDATE_INTERVAL)
+    _remock_feeds(aioclient_mock)
+    await _advance(hass, freezer, SEGMENT_UPDATE_INTERVAL)
+    # The absence counter restarts: one more normal poll is not enough
+    _remock_feeds(aioclient_mock, traffic_content=_all_normal_layer())
+    await _advance(hass, freezer, SEGMENT_UPDATE_INTERVAL)
+
+    assert len(_segment_geo_states(hass)) == EXPECTED_DISRUPTED
+    assert registry.async_get("geo_location.staugefahr").id == registry_id
+    assert not registry.deleted_entities
+
+
+async def test_segments_survive_failed_traffic_feed(
+    hass: HomeAssistant, aioclient_mock, freezer
+) -> None:
+    """Failed traffic polls never count as absence."""
+    entry = mock_config_entry()
+    await _setup(hass, entry)
+    entity_ids = [state.entity_id for state in _segment_geo_states(hass)]
+
+    from .test_messages import _remock_feeds
+
+    _remock_feeds(aioclient_mock, traffic_status=503)
+    for _ in range(5):  # beyond the stale tolerance: entities go unavailable
+        await _advance(hass, freezer, SEGMENT_UPDATE_INTERVAL)
+    states = [hass.states.get(entity_id) for entity_id in entity_ids]
+    assert all(state.state == "unavailable" for state in states)
+    assert not er.async_get(hass).deleted_entities
+
+
+async def test_segment_volatile_attributes_not_recorded(
+    hass: HomeAssistant, aioclient_mock, freezer
+) -> None:
+    """Speed and measurement time stay out of the recorded attributes."""
+    from homeassistant.components.recorder.db_schema import StateAttributes
+    from homeassistant.const import EVENT_STATE_CHANGED
+    from homeassistant.core import Event
+
+    def _recorded(entity_id: str) -> dict:
+        """Attributes exactly as the recorder would store them."""
+        state = hass.states.get(entity_id)
+        event = Event(
+            EVENT_STATE_CHANGED,
+            {"entity_id": entity_id, "old_state": None, "new_state": state},
+        )
+        return json.loads(StateAttributes.shared_attrs_bytes_from_event(event, None))
+
+    entry = mock_config_entry()
+    await _setup(hass, entry)
+    entity_id = "geo_location.staugefahr"
+    assert hass.states.get(entity_id).attributes["speed_kmh"] == 4
+    assert "measured_at" in hass.states.get(entity_id).attributes
+    before = _recorded(entity_id)
+    assert before["segment_id"] == "100"
+    assert "speed_kmh" not in before
+    assert "measured_at" not in before
+
+    # A new speed and timestamp must not create a new attributes row
+    data = json.loads(load_fixture_bytes("verkehrslage.json"))
+    for feature in data["features"]:
+        feature["properties"]["geschwindigkeit"] = 7
+
+    from .test_messages import _remock_feeds
+
+    _remock_feeds(aioclient_mock, traffic_content=json.dumps(data).encode())
+    await _advance(hass, freezer, SEGMENT_UPDATE_INTERVAL)
+    assert hass.states.get(entity_id).attributes["speed_kmh"] == 7
+    assert _recorded(entity_id) == before
 
 
 def _entry_with_segment(segment_id: str, title: str):
